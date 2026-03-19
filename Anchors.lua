@@ -144,21 +144,13 @@ function ns.SetPoints(self)
 	local castTargetScales = PlateColorDB.castTargetScale
 	
 	--部分需要尺寸调节(敌方玩家宠物/仆从) — 完全使用独立绝对值，不叠加基础设置
+	--宽高不区分选中/未选中，避免切换目标时偏移量跳变导致闪烁
 	if UnitIsOtherPlayersPet(self.unit) and not UnitIsPlayer(self.unit) and PlateColorDB.petPlateEnable then
-		local isTarget = UnitIsUnit("target", self.unit)
-		if isTarget then
-			hpWidht = PlateColorDB.petSelectedHpWidth
-			hpHeight = PlateColorDB.petSelectedHpHeight
-			castBarHeight = PlateColorDB.petSelectedCastBarHeight
-			castTextScales = PlateColorDB.petCastTextScale
-			castTargetScales = PlateColorDB.petCastTargetScale
-		else
-			hpWidht = PlateColorDB.petHpWidth
-			hpHeight = PlateColorDB.petHpHeight
-			castBarHeight = PlateColorDB.petCastBarHeight
-			castTextScales = PlateColorDB.petCastTextScale
-			castTargetScales = PlateColorDB.petCastTargetScale
-		end
+		hpWidht = PlateColorDB.petHpWidth
+		hpHeight = PlateColorDB.petHpHeight
+		castBarHeight = PlateColorDB.petCastBarHeight
+		castTextScales = PlateColorDB.petCastTextScale
+		castTargetScales = PlateColorDB.petCastTargetScale
 	end
 	PixelUtil.SetPoint(self.castBar, "BOTTOMLEFT", self, "BOTTOMLEFT", -hpWidht+50, 0);--施法条宽度
 	PixelUtil.SetPoint(self.castBar, "BOTTOMRIGHT", self, "BOTTOMRIGHT", hpWidht-50, 0);--施法条宽度
@@ -237,11 +229,17 @@ function ns.SetPoints(self)
 		PixelUtil.SetPoint(self.AurasFrame.DebuffListFrame, "BOTTOM", self.name, "TOP", 0, debuffPadding);
 	end
 
-	--敌方宠物透明度
+	--敌方宠物透明度和选中缩放
 	if UnitIsOtherPlayersPet(self.unit) and not UnitIsPlayer(self.unit) and PlateColorDB.petPlateEnable then
 		local isTarget = UnitIsUnit("target", self.unit)
-		local petAlpha = isTarget and PlateColorDB.petSelectedAlpha or PlateColorDB.petAlpha
-		self:SetAlpha(petAlpha)
+		self:SetAlpha(isTarget and PlateColorDB.petSelectedAlpha or PlateColorDB.petAlpha)
+		if isTarget then
+			local globalScale = tonumber(PlateColorDB.SelectedScale) or 1.2
+			local petScale = tonumber(PlateColorDB.petSelectedScale) or 1
+			self:SetScale(globalScale > 0 and (petScale / globalScale) or 1)
+		else
+			self:SetScale(1)
+		end
 	end
 
 	

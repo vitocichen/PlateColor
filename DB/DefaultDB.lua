@@ -127,6 +127,7 @@ ns.PlateColorDB = {
 	petSelectedHpHeight = 12,		--选中时宠物血条高度(绝对值)
 	petSelectedCastBarHeight = 15,	--选中时宠物施法条高度(绝对值)
 	petSelectedAlpha = 1,			--选中时宠物透明度
+	petSelectedScale = 1,			--选中时宠物缩放(1=与未选中相同大小)
 	petBarColor = {r=1, g=0.4, b=0},	--敌方宠物血条颜色
 	petBarColorEnable = false,		--启用敌方宠物血条颜色
 	petNameColor = {r=1, g=0.6, b=0.2},--敌方宠物名字颜色
