@@ -67,8 +67,8 @@ hooksecurefunc(NamePlateUnitFrameMixin, "OnUnitSet", function(self)
 	if self:IsForbidden() then
 		SystemFont_NamePlate:SetFont(SystemFont_NamePlate:GetFont(),1,"OUTLINE")
 		SystemFont_NamePlate_Outlined:SetFont(SystemFont_NamePlate_Outlined:GetFont(),1,"OUTLINE")
-		SystemFont_NamePlate:SetFont(SystemFont_NamePlate:GetFont(),PlateColorDB.helpNameScale,"OUTLINE")
-		SystemFont_NamePlate_Outlined:SetFont(SystemFont_NamePlate_Outlined:GetFont(),PlateColorDB.helpNameScale,"OUTLINE")
+		SystemFont_NamePlate:SetFont(SystemFont_NamePlate:GetFont(),PlateColorDB.nameScale,"OUTLINE")
+		SystemFont_NamePlate_Outlined:SetFont(SystemFont_NamePlate_Outlined:GetFont(),PlateColorDB.nameScale,"OUTLINE")
 	end
 	if not PlateColorDB.onlyNameNpc then return end
 	if not self:IsPlayer() and (self:IsForbidden() or not UnitCanAttack("player",self.unit)) then

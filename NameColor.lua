@@ -4,10 +4,29 @@
 function ns.SetNameColor(unitFrame)
     local unit = unitFrame.unit
     if not unit or not unitFrame.name then return end
-    if UnitIsPlayer(unit) then return end -- 保持逻辑：跳过玩家
 
     local DB = PlateColorDB
     local name = unitFrame.name
+
+    -- 玩家单位：敌对玩家支持白色名字和职业颜色
+    if UnitIsPlayer(unit) then
+        if UnitCanAttack("player", unit) then
+            if DB.whiteName then
+                name:SetVertexColor(1.0, 1.0, 1.0) -- 白色名字
+            else
+                local _, class = UnitClass(unit)
+                if class then
+                    local color = RAID_CLASS_COLORS[class]
+                    if color then
+                        name:SetVertexColor(color.r, color.g, color.b) -- 职业颜色
+                        return
+                    end
+                end
+                name:SetVertexColor(1.0, 1.0, 1.0) -- 兜底白色
+            end
+        end
+        return
+    end
 
     -- 1. 优先判定：灰色（死亡或无权拾取）
     if CompactUnitFrame_IsTapDenied(unitFrame) or (UnitIsDead(unit) and not UnitIsPlayer(unit)) then

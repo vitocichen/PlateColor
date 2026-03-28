@@ -112,12 +112,13 @@ function ns.SetPoints(self)
 	self.castBar.BorderShield:ClearAllPoints();
 	self.castBar.CastTargetNameText:ClearAllPoints();
 	
-	if self:IsPlayer() then
-		self.name:SetFont(self.name:GetFont(), PlateColorDB.helpNameScale,"OUTLINE");
-	elseif self.unit and not UnitCanAttack("player",self.unit) then
-		self.name:SetFont(self.name:GetFont(), PlateColorDB.helpNameScale*0.9, "SLUG");
-	else
+	if self.unit and UnitCanAttack("player", self.unit) then
+		-- 所有敌方单位（包括敌对玩家和敌对NPC）统一使用 nameScale
 		self.name:SetFont(self.name:GetFont(), PlateColorDB.nameScale, PlateColorDB.nameOUTLINE and "OUTLINE,SLUG" or "SLUG");
+	elseif self:IsPlayer() then
+		self.name:SetFont(self.name:GetFont(), PlateColorDB.helpNameScale,"OUTLINE");
+	else
+		self.name:SetFont(self.name:GetFont(), PlateColorDB.helpNameScale*0.9, "SLUG");
 	end
 	--名字位置
 	if not self.healthBar:IsShown() then
