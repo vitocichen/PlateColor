@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlateColor 姓名板样式预览</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1e293b; color:#e2e8f0; font-family:'Microsoft YaHei',sans-serif; padding:20px; }
+
+h1 { text-align:center; font-size:28px; margin-bottom:6px; background:linear-gradient(90deg,#ff5900,#ffb300,#f0ff00,#3cff00,#00ffd2,#00d1ff,#d56aff,#ff6bed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.subtitle { text-align:center; color:#94a3b8; font-size:14px; margin-bottom:24px; }
+
+.main-layout { display:flex; gap:30px; max-width:1400px; margin:0 auto; }
+.preview-col { flex:1; }
+.control-col { width:380px; flex-shrink:0; }
+
+/* 场景卡片 */
+.scene-card {
+  background:#0f172a;
+  border:1px solid #334155;
+  border-radius:8px;
+  padding:20px;
+  margin-bottom:16px;
+  position:relative;
+}
+.scene-title {
+  font-size:16px; font-weight:bold; margin-bottom:16px; padding-bottom:8px;
+  border-bottom:1px solid #334155;
+}
+.scene-title .badge {
+  display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; margin-left:8px; font-weight:normal;
+}
+.badge-selected { background:#0f766e33; color:#2dd4bf; border:1px solid #2dd4bf44; }
+.badge-unselected { background:#47556933; color:#94a3b8; border:1px solid #47556955; }
+.badge-player { background:#1e40af33; color:#60a5fa; border:1px solid #60a5fa44; }
+.badge-pet { background:#b4530033; color:#fb923c; border:1px solid #fb923c44; }
+.badge-pet-new { background:#dc262633; color:#f87171; border:1px solid #f8717144; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.7} }
+
+/* 姓名板模拟 */
+.nameplate-container {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:12px 0;
+}
+
+.nameplate {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  transition:all .3s ease;
+}
+
+/* 名字 */
+.np-name {
+  font-size:14px;
+  font-weight:bold;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  margin-bottom:3px;
+  white-space:nowrap;
+}
+
+/* 血条容器 */
+.np-hp-container {
+  position:relative;
+  transition:all .3s ease;
+}
+
+/* 血条背景 */
+.np-hp-bg {
+  position:absolute;
+  top:-1px; left:-1px; right:-1px; bottom:-1px;
+  background:#000;
+  opacity:0.55;
+  border:1px solid #555;
+}
+
+/* 血条填充 */
+.np-hp-bar {
+  position:relative;
+  height:100%;
+  transition:all .3s ease;
+  z-index:1;
+}
+
+/* 选中边框 */
+.np-selected-border {
+  position:absolute;
+  top:-2px; left:-2px; right:-2px; bottom:-2px;
+  border:2px solid;
+  z-index:2;
+  display:none;
+}
+.np-selected-border.show { display:block; }
+
+/* 未选中覆盖层 */
+.np-deselected-overlay {
+  position:absolute;
+  top:-1px; left:-1px; right:-1px; bottom:-1px;
+  border:1px solid #444;
+  z-index:2;
+}
+
+/* 施法条 */
+.np-cast-container {
+  position:relative;
+  margin-top:2px;
+  transition:all .3s ease;
+}
+.np-cast-bg {
+  position:absolute;
+  top:-1px; left:-1px; right:-1px; bottom:-1px;
+  background:#000;
+  opacity:0.55;
+  border:1px solid #444;
+}
+.np-cast-bar {
+  position:relative;
+  height:100%;
+  z-index:1;
+}
+.np-cast-text {
+  position:absolute;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  font-size:10px;
+  color:#fff;
+  text-shadow:0 0 2px #000;
+  white-space:nowrap;
+  z-index:3;
+}
+.np-cast-icon {
+  position:absolute;
+  right:calc(100% + 2px);
+  bottom:0;
+  background:#333;
+  border:1px solid #666;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:10px;
+  color:#ccc;
+  z-index:3;
+}
+
+/* 百分比文本 */
+.np-hp-text {
+  position:absolute;
+  right:4px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:12px;
+  color:#fff;
+  text-shadow:0 0 3px #000;
+  z-index:3;
+  font-weight:bold;
+}
+
+/* 箭头 */
+.np-arrow {
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:18px;
+  z-index:5;
+  display:none;
+}
+.np-arrow.show { display:block; }
+.np-arrow-left { right:calc(100% + 4px); }
+.np-arrow-right { left:calc(100% + 4px); }
+
+/* 光环 */
+.np-auras {
+  display:flex;
+  gap:2px;
+  margin-top:4px;
+}
+.np-aura {
+  width:24px; height:24px;
+  background:#333;
+  border:1px solid #888;
+  border-radius:2px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:8px;
+  color:#0ff;
+  position:relative;
+}
+.np-aura .cd { position:absolute; bottom:-1px; right:1px; font-size:7px; color:#ff0; }
+
+/* 等级文本 */
+.np-level {
+  position:absolute;
+  left:calc(100% + 4px);
+  top:50%;
+  transform:translateY(-50%);
+  font-size:11px;
+  color:#ff0;
+  text-shadow:0 0 2px #000;
+  font-weight:bold;
+  z-index:4;
+}
+
+/* 斩杀线 */
+.np-slayline {
+  position:absolute;
+  top:-1px;
+  bottom:-1px;
+  width:1px;
+  background:#fff;
+  z-index:4;
+}
+
+/* 控制面板 */
+.control-panel {
+  background:#0f172a;
+  border:1px solid #334155;
+  border-radius:8px;
+  padding:16px;
+  position:sticky;
+  top:20px;
+}
+.ctrl-title {
+  font-size:16px; font-weight:bold; margin-bottom:12px;
+  color:#0ff;
+  border-bottom:1px solid #334155;
+  padding-bottom:8px;
+}
+.ctrl-group { margin-bottom:12px; }
+.ctrl-group-title {
+  font-size:13px; color:#f59e0b; margin-bottom:6px; font-weight:bold;
+}
+.ctrl-row {
+  display:flex; align-items:center; gap:8px; margin:4px 0; font-size:12px;
+}
+.ctrl-label { min-width:130px; color:#94a3b8; }
+.ctrl-slider {
+  -webkit-appearance:none;
+  width:120px; height:4px;
+  background:#334155;
+  border-radius:2px;
+  cursor:pointer;
+}
+.ctrl-slider::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:12px; height:12px;
+  background:#60a5fa;
+  border-radius:50%;
+  cursor:pointer;
+}
+.ctrl-val { color:#2dd4bf; min-width:36px; text-align:right; font-weight:bold; font-size:11px; }
+
+/* 分隔线 */
+.ctrl-sep { border-top:1px dashed #334155; margin:8px 0; }
+
+/* 图例 */
+.legend {
+  display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin:16px 0;
+  font-size:12px;
+}
+.legend-item { display:flex; align-items:center; gap:4px; }
+.legend-color { width:16px; height:10px; border:1px solid #555; border-radius:1px; }
+
+/* 对比区域 */
+.compare-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+/* 重要提示 */
+.notice {
+  background:#1e3a5f;
+  border:1px solid #3b82f6;
+  border-radius:6px;
+  padding:10px 14px;
+  font-size:12px;
+  color:#93c5fd;
+  margin-bottom:16px;
+  line-height:1.6;
+}
+.notice b { color:#60a5fa; }
+</style>
+</head>
+<body>
+
+<h1>PlateColor 姓名板样式预览</h1>
+<p class="subtitle">实时预览不同单位类型在不同状态下的血条显示效果 — 拖动右侧滑块调节参数</p>
+
+<div class="notice">
+  <b>⚡ 独立设置说明：</b>宠物的宽度/高度/施法条等参数现在<b>完全独立</b>，不受"基础"页面中的玩家设置影响。
+  调节左侧"基础姓名板"只会影响敌方玩家的显示，调节"敌方宠物"只会影响宠物的显示。
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-color" style="background:#c41e3a"></div>敌方玩家(死亡骑士)</div>
+  <div class="legend-item"><div class="legend-color" style="background:#ff7c0a"></div>敌方玩家(德鲁伊)</div>
+  <div class="legend-item"><div class="legend-color" style="background:#f00"></div>敌方宠物(红色)</div>
+  <div class="legend-item"><div class="legend-color" style="background:#0ff"></div>选中目标颜色</div>
+  <div class="legend-item"><div class="legend-color" style="background:#fff"></div>斩杀线</div>
+  <div class="legend-item"><div class="legend-color" style="background:#0f0"></div>友方</div>
+</div>
+
+<div class="main-layout">
+  <div class="preview-col">
+    <div class="compare-grid">
+
+      <!-- 1. 敌方玩家 - 未选中 -->
+      <div class="scene-card">
+        <div class="scene-title">敌方玩家 <span class="badge badge-player">玩家</span><span class="badge badge-unselected">未选中</span></div>
+        <div class="nameplate-container">
+          <div class="nameplate" id="np-player-desel">
+            <div class="np-name" style="color:#c41e3a">凛冬猎手</div>
+            <div class="np-hp-container" id="hp-player-desel" style="width:200px;height:14px">
+              <div class="np-hp-bg"></div>
+              <div class="np-hp-bar" id="bar-player-desel" style="width:72%;background:#c41e3a"></div>
+              <div class="np-hp-text">72%</div>
+              <div class="np-deselected-overlay"></div>
+              <div class="np-slayline" style="left:80%"></div>
+            </div>
+            <div class="np-cast-container" id="cast-player-desel" style="width:200px;height:18px;display:none">
+              <div class="np-cast-bg"></div>
+              <div class="np-cast-bar" style="width:45%;background:#b8860b"></div>
+              <div class="np-cast-text">混乱箭</div>
+              <div class="np-cast-icon" style="width:18px;height:18px">🏹</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-top:4px">死亡骑士 - 职业颜色 #C41E3A</div>
+      </div>
+
+      <!-- 2. 敌方玩家 - 选中 -->
+      <div class="scene-card">
+        <div class="scene-title">敌方玩家 <span class="badge badge-player">玩家</span><span class="badge badge-selected">✦ 选中</span></div>
+        <div class="nameplate-container">
+          <div class="nameplate" id="np-player-sel">
+            <div class="np-name" style="color:#ff7c0a">暗影德鲁伊</div>
+            <div class="np-hp-container" id="hp-player-sel" style="width:240px;height:17px">
+              <div class="np-hp-bg"></div>
+              <div class="np-hp-bar" id="bar-player-sel" style="width:72%;background:#0ff"></div>
+              <div class="np-hp-text">72%</div>
+              <div class="np-selected-border show" style="border-color:#0ff"></div>
+              <div class="np-slayline" style="left:80%"></div>
+              <div class="np-arrow np-arrow-left show" style="color:#fff">◄</div>
+              <div class="np-arrow np-arrow-right show" style="color:#fff">►</div>
+            </div>
+            <div class="np-cast-container" id="cast-player-sel" style="width:240px;height:18px">
+              <div class="np-cast-bg"></div>
+              <div class="np-cast-bar" style="width:45%;background:#b8860b"></div>
+              <div class="np-cast-text">混乱箭</div>
+              <div class="np-cast-icon" style="width:18px;height:18px">🏹</div>
+            </div>
+            <div class="np-auras">
+              <div class="np-aura">💀<div class="cd">3s</div></div>
+              <div class="np-aura">🔥<div class="cd">8s</div></div>
+              <div class="np-aura">❄<div class="cd">12s</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-top:4px">德鲁伊 #FF7C0A | 选中时血条变青色</div>
+      </div>
+
+      <!-- 3. 敌方宠物 - 未选中 -->
+      <div class="scene-card">
+        <div class="scene-title">敌方宠物/仆从 <span class="badge badge-pet-new">🐾 宠物(魔改)</span><span class="badge badge-unselected">未选中</span></div>
+        <div class="nameplate-container">
+          <div class="nameplate" id="np-pet-desel">
+            <div class="np-name" id="petname-desel" style="color:#f00">恶魔猎犬</div>
+            <div class="np-hp-container" id="hp-pet-desel" style="width:130px;height:10px">
+              <div class="np-hp-bg"></div>
+              <div class="np-hp-bar" id="petbar-desel" style="width:85%;background:#f00"></div>
+              <div class="np-hp-text" style="font-size:10px">85%</div>
+              <div class="np-deselected-overlay"></div>
+            </div>
+            <div class="np-cast-container" id="cast-pet-desel" style="width:130px;height:13px;display:none">
+              <div class="np-cast-bg"></div>
+              <div class="np-cast-bar" style="width:60%;background:#b8860b"></div>
+              <div class="np-cast-text" style="font-size:8px">烈焰吐息</div>
+              <div class="np-cast-icon" style="width:13px;height:13px;font-size:8px">🔥</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#f66;margin-top:4px">独立设置 · 宽度高度不受基础影响</div>
+      </div>
+
+      <!-- 4. 敌方宠物 - 选中 -->
+      <div class="scene-card">
+        <div class="scene-title">敌方宠物/仆从 <span class="badge badge-pet-new">🐾 宠物(魔改)</span><span class="badge badge-selected">✦ 选中</span></div>
+        <div class="nameplate-container">
+          <div class="nameplate" id="np-pet-sel">
+            <div class="np-name" id="petname-sel" style="color:#f00">恶魔猎犬</div>
+            <div class="np-hp-container" id="hp-pet-sel" style="width:160px;height:12px">
+              <div class="np-hp-bg"></div>
+              <div class="np-hp-bar" id="petbar-sel" style="width:85%;background:#0ff"></div>
+              <div class="np-hp-text" style="font-size:11px">85%</div>
+              <div class="np-selected-border show" style="border-color:#0ff"></div>
+              <div class="np-arrow np-arrow-left show" style="color:#fff;font-size:14px">◄</div>
+              <div class="np-arrow np-arrow-right show" style="color:#fff;font-size:14px">►</div>
+            </div>
+            <div class="np-cast-container" id="cast-pet-sel" style="width:160px;height:15px">
+              <div class="np-cast-bg"></div>
+              <div class="np-cast-bar" style="width:60%;background:#b8860b"></div>
+              <div class="np-cast-text" style="font-size:9px">烈焰吐息</div>
+              <div class="np-cast-icon" style="width:15px;height:15px;font-size:8px">🔥</div>
+            </div>
+            <div class="np-auras">
+              <div class="np-aura" style="width:20px;height:20px;font-size:7px">🔥<div class="cd">5s</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#f66;margin-top:4px">独立设置 · 选中时参数也独立</div>
+      </div>
+
+      <!-- 5. 敌方宠物 - 原版对比 -->
+      <div class="scene-card" style="border-color:#555;opacity:0.7">
+        <div class="scene-title" style="color:#888">原版宠物(对比) <span class="badge badge-pet">旧版</span><span class="badge badge-unselected">未选中</span></div>
+        <div class="nameplate-container">
+          <div class="nameplate">
+            <div class="np-name" style="color:#f00;font-size:13px">恶魔猎犬</div>
+            <div class="np-hp-container" style="width:146px;height:10px">
+              <div class="np-hp-bg"></div>
+              <div class="np-hp-bar" style="width:85%;background:#f00"></div>
+              <div class="np-hp-text" style="font-size:10px">85%</div>
+              <div class="np-deselected-overlay"></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-top:4px">旧版: 基础宽度-27, 基础高度×0.7 (依赖基础)</div>
+      </div>
+
+      <!-- 6. 敌方图腾 -->
+      <div class="scene-card" style="border-color:#555;opacity:0.7">
+        <div class="scene-title" style="color:#888">敌方图腾 <span style="font-size:11px;color:#666">(无特殊处理)</span></div>
+        <div class="nameplate-container">
+          <div class="nameplate">
+            <div class="np-name" style="color:#f00;font-size:14px">战栗图腾</div>
+            <div class="np-hp-container" style="width:200px;height:14px">
+              <div class="np-hp-bg"></div>
+              <div class="np-hp-bar" style="width:100%;background:#f00"></div>
+              <div class="np-hp-text">100%</div>
+              <div class="np-deselected-overlay"></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-top:4px">图腾 = 跟随基础设置尺寸</div>
+      </div>
+
+      <!-- 7. 友方宠物 -->
+      <div class="scene-card" style="border-color:#0ff33;opacity:0.85">
+        <div class="scene-title" style="color:#0ff">友方玩家宠物 <span class="badge" style="border-color:#0ff44;color:#0ff;background:#0ff11">友方</span></div>
+        <div class="nameplate-container">
+          <div class="nameplate">
+            <div class="np-name" style="color:#0ff;font-size:13px">水元素</div>
+            <div class="np-hp-container" style="width:146px;height:10px">
+              <div class="np-hp-bg"></div>
+              <div class="np-hp-bar" style="width:95%;background:#0f0"></div>
+              <div class="np-hp-text" style="font-size:10px">95%</div>
+              <div class="np-deselected-overlay"></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#0aa;margin-top:4px">名字颜色=青色, 血条=绿色(友方)</div>
+      </div>
+
+      <!-- 8. 普通敌对NPC -->
+      <div class="scene-card">
+        <div class="scene-title">普通敌对NPC <span class="badge badge-unselected">未选中</span></div>
+        <div class="nameplate-container">
+          <div class="nameplate">
+            <div class="np-name" style="color:#f00;font-size:14px">堕落卫士</div>
+            <div class="np-hp-container" style="width:200px;height:14px">
+              <div class="np-hp-bg"></div>
+              <div class="np-hp-bar" style="width:65%;background:#f00"></div>
+              <div class="np-hp-text">65%</div>
+              <div class="np-deselected-overlay"></div>
+              <div class="np-slayline" style="left:80%"></div>
+              <div class="np-level">2</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 控制面板 -->
+  <div class="control-col">
+    <div class="control-panel">
+      <div class="ctrl-title">⚙ 实时调节参数</div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-group-title">🎯 基础姓名板（仅影响玩家/NPC/图腾）</div>
+        <div class="ctrl-row"><span class="ctrl-label">血条宽度 (hpWidht)</span><input type="range" class="ctrl-slider" id="baseWidth" min="5" max="50" value="25"><span class="ctrl-val" id="baseWidthVal">25</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">血条高度 (hpHeight)</span><input type="range" class="ctrl-slider" id="baseHeight" min="5" max="30" value="14"><span class="ctrl-val" id="baseHeightVal">14</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">选中目标尺寸比例</span><input type="range" class="ctrl-slider" id="selScale" min="100" max="150" value="120"><span class="ctrl-val" id="selScaleVal">1.20</span></div>
+      </div>
+
+      <div class="ctrl-sep"></div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-group-title">🐾 敌方宠物 - 未选中（完全独立）</div>
+        <div class="ctrl-row"><span class="ctrl-label">血条宽度</span><input type="range" class="ctrl-slider" id="petWidth" min="5" max="50" value="15"><span class="ctrl-val" id="petWidthVal">15</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">血条高度</span><input type="range" class="ctrl-slider" id="petHeight" min="3" max="30" value="10"><span class="ctrl-val" id="petHeightVal">10</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">施法条高度</span><input type="range" class="ctrl-slider" id="petCastH" min="3" max="30" value="13"><span class="ctrl-val" id="petCastHVal">13</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">透明度</span><input type="range" class="ctrl-slider" id="petAlpha" min="10" max="100" value="100"><span class="ctrl-val" id="petAlphaVal">1.00</span></div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-group-title">🐾 敌方宠物 - 选中时（完全独立）</div>
+        <div class="ctrl-row"><span class="ctrl-label">血条宽度</span><input type="range" class="ctrl-slider" id="petSelWidth" min="5" max="50" value="20"><span class="ctrl-val" id="petSelWidthVal">20</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">血条高度</span><input type="range" class="ctrl-slider" id="petSelHeight" min="3" max="30" value="12"><span class="ctrl-val" id="petSelHeightVal">12</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">施法条高度</span><input type="range" class="ctrl-slider" id="petSelCastH" min="3" max="30" value="15"><span class="ctrl-val" id="petSelCastHVal">15</span></div>
+        <div class="ctrl-row"><span class="ctrl-label">透明度</span><input type="range" class="ctrl-slider" id="petSelAlpha" min="10" max="100" value="100"><span class="ctrl-val" id="petSelAlphaVal">1.00</span></div>
+      </div>
+
+      <div class="ctrl-sep"></div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-group-title">🎨 宠物颜色</div>
+        <div class="ctrl-row"><span class="ctrl-label">血条颜色</span><input type="color" id="petBarColor" value="#ff0000" style="width:60px;height:24px;border:none;cursor:pointer"><label style="font-size:11px;color:#94a3b8"><input type="checkbox" id="petBarColorEnable"> 自定义</label></div>
+        <div class="ctrl-row"><span class="ctrl-label">名字颜色</span><input type="color" id="petNameColor" value="#ff0000" style="width:60px;height:24px;border:none;cursor:pointer"><label style="font-size:11px;color:#94a3b8"><input type="checkbox" id="petNameColorEnable"> 自定义</label></div>
+      </div>
+
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid #334155;">
+        <div style="font-size:11px;color:#64748b;line-height:1.6">
+          <b style="color:#f59e0b">📌 说明：</b><br>
+          • <b style="color:#fb923c">宠物参数完全独立</b>，不受基础设置影响<br>
+          • 基础宽度=150+宽度值×2 (px模拟游戏中效果)<br>
+          • 宠物宽度=100+宠物宽度值×4 (独立计算)<br>
+          • 玩家显示<b style="color:#c41e3a">职业颜色</b>，宠物默认<b style="color:#f00">红色</b><br>
+          • 选中时血条变为<b style="color:#0ff">青色(目标颜色)</b>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// 基础参数
+const baseW = $('baseWidth');
+const baseH = $('baseHeight');
+const selScale = $('selScale');
+
+// 宠物未选中
+const petW = $('petWidth');
+const petH = $('petHeight');
+const petCH = $('petCastH');
+const petA = $('petAlpha');
+
+// 宠物选中
+const petSW = $('petSelWidth');
+const petSH = $('petSelHeight');
+const petSCH = $('petSelCastH');
+const petSA = $('petSelAlpha');
+
+// 颜色
+const petBC = $('petBarColor');
+const petBCE = $('petBarColorEnable');
+const petNC = $('petNameColor');
+const petNCE = $('petNameColorEnable');
+
+function updateAll() {
+  const bw = parseInt(baseW.value);
+  const bh = parseInt(baseH.value);
+  const ss = parseInt(selScale.value) / 100;
+  const baseWidthPx = 150 + bw * 2;
+
+  // 更新值显示
+  $('baseWidthVal').textContent = bw;
+  $('baseHeightVal').textContent = bh;
+  $('selScaleVal').textContent = ss.toFixed(2);
+  $('petWidthVal').textContent = petW.value;
+  $('petHeightVal').textContent = petH.value;
+  $('petCastHVal').textContent = petCH.value;
+  $('petAlphaVal').textContent = (petA.value / 100).toFixed(2);
+  $('petSelWidthVal').textContent = petSW.value;
+  $('petSelHeightVal').textContent = petSH.value;
+  $('petSelCastHVal').textContent = petSCH.value;
+  $('petSelAlphaVal').textContent = (petSA.value / 100).toFixed(2);
+
+  // ============ 玩家姓名板 - 不受宠物设置影响 ============
+  // 玩家未选中
+  const hpPlayerDesel = $('hp-player-desel');
+  hpPlayerDesel.style.width = baseWidthPx + 'px';
+  hpPlayerDesel.style.height = bh + 'px';
+
+  // 玩家选中 (SelectedScale)
+  const selWidthPx = baseWidthPx * ss;
+  const selHeightPx = bh * ss;
+  const hpPlayerSel = $('hp-player-sel');
+  hpPlayerSel.style.width = selWidthPx + 'px';
+  hpPlayerSel.style.height = selHeightPx + 'px';
+  // 选中时施法条也跟随
+  const castPlayerSel = $('cast-player-sel');
+  castPlayerSel.style.width = selWidthPx + 'px';
+
+  // ============ 宠物姓名板 - 完全独立 ============
+  // 宠物未选中（独立绝对值）
+  const petDeselW = 100 + parseInt(petW.value) * 4;
+  const petDeselH = parseInt(petH.value);
+  const petDeselCastH = parseInt(petCH.value);
+  const hpPetDesel = $('hp-pet-desel');
+  hpPetDesel.style.width = Math.max(40, petDeselW) + 'px';
+  hpPetDesel.style.height = Math.max(4, petDeselH) + 'px';
+  $('np-pet-desel').style.opacity = petA.value / 100;
+
+  const castPetDesel = $('cast-pet-desel');
+  castPetDesel.style.width = Math.max(40, petDeselW) + 'px';
+  castPetDesel.style.height = Math.max(4, petDeselCastH) + 'px';
+
+  // 宠物选中（独立绝对值）
+  const petSelWPx = 100 + parseInt(petSW.value) * 4;
+  const petSelHPx = parseInt(petSH.value);
+  const petSelCastHPx = parseInt(petSCH.value);
+  const hpPetSel = $('hp-pet-sel');
+  hpPetSel.style.width = Math.max(40, petSelWPx) + 'px';
+  hpPetSel.style.height = Math.max(4, petSelHPx) + 'px';
+  $('np-pet-sel').style.opacity = petSA.value / 100;
+
+  const castPetSel = $('cast-pet-sel');
+  castPetSel.style.width = Math.max(40, petSelWPx) + 'px';
+  castPetSel.style.height = Math.max(4, petSelCastHPx) + 'px';
+
+  // ============ 颜色 ============
+  const barDesel = $('petbar-desel');
+  const barSel = $('petbar-sel');
+  const nameDesel = $('petname-desel');
+  const nameSel = $('petname-sel');
+
+  // 宠物血条颜色（未选中时）
+  if (petBCE.checked) {
+    barDesel.style.background = petBC.value;
+  } else {
+    barDesel.style.background = '#f00'; // 默认红色
+  }
+  // 选中时血条始终是目标颜色(#0ff)
+  barSel.style.background = '#0ff';
+
+  // 宠物名字颜色
+  if (petNCE.checked) {
+    nameDesel.style.color = petNC.value;
+    nameSel.style.color = petNC.value;
+  } else {
+    nameDesel.style.color = '#f00'; // 默认红色
+    nameSel.style.color = '#f00';
+  }
+}
+
+// 绑定事件
+[baseW, baseH, selScale, petW, petH, petCH, petA, petSW, petSH, petSCH, petSA].forEach(el => {
+  el.addEventListener('input', updateAll);
+});
+[petBC, petNC].forEach(el => {
+  el.addEventListener('input', updateAll);
+});
+[petBCE, petNCE].forEach(el => {
+  el.addEventListener('change', updateAll);
+});
+
+// 初始化
+updateAll();
+</script>
+</body>
+</html>

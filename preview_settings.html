@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlateColor 设置界面预览</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a1a2e; color:#ccc; font-family:'Microsoft YaHei','SimHei',sans-serif; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:20px; }
+
+.addon-panel {
+  width:720px;
+  background:linear-gradient(135deg,#0d0d1a 0%,#1a1a2e 100%);
+  border:2px solid #555;
+  border-radius:4px;
+  padding:16px;
+  box-shadow:0 0 30px rgba(0,0,0,0.8);
+}
+
+/* 标题区域 */
+.title-bar { display:flex; align-items:flex-end; margin-bottom:8px; }
+.title-main { font-size:42px; font-weight:bold; background:linear-gradient(90deg,#ff5900,#ffb300,#f0ff00,#96ff00,#3cff00,#00ffd2,#00d1ff,#00b3ff,#d56aff,#ff6bed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:2px; }
+.title-sub { font-size:16px; color:#fff; margin-left:8px; margin-bottom:6px; }
+.title-version { margin-left:auto; color:#0ff; font-size:14px; margin-bottom:6px; }
+
+/* 标签栏 */
+.tab-bar { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+.tab-btn {
+  padding:4px 14px;
+  background:linear-gradient(180deg,#3a3a4a,#2a2a3a);
+  border:1px solid #666;
+  border-bottom:none;
+  color:#fff;
+  cursor:pointer;
+  font-size:13px;
+  border-radius:4px 4px 0 0;
+  transition:all .2s;
+  user-select:none;
+}
+.tab-btn:hover { background:linear-gradient(180deg,#4a4a5a,#3a3a4a); }
+.tab-btn.active { background:linear-gradient(180deg,#2a2a3a,#1a1a2a); color:#ff0; transform:scale(1.08); border-color:#888; }
+
+/* 内容区域 */
+.content-area {
+  background:rgba(0,0,0,0.5);
+  border:2px solid #555;
+  border-radius:4px;
+  padding:12px 16px;
+  min-height:520px;
+  max-height:520px;
+  overflow-y:auto;
+}
+.content-area::-webkit-scrollbar { width:8px; }
+.content-area::-webkit-scrollbar-track { background:#1a1a2e; }
+.content-area::-webkit-scrollbar-thumb { background:#555; border-radius:4px; }
+
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+/* 设置项样式 */
+.section-title {
+  font-size:18px; font-weight:bold; color:#fff;
+  margin:16px 0 8px 20px;
+  text-shadow:0 0 4px rgba(255,255,255,0.3);
+}
+.section-title:first-child { margin-top:4px; }
+
+.setting-row {
+  display:flex; align-items:center;
+  padding:5px 12px 5px 80px;
+  margin:2px 0;
+  border-radius:2px;
+  min-height:30px;
+  transition:background .15s;
+}
+.setting-row:hover { background:rgba(128,128,128,0.2); }
+
+.setting-label {
+  color:#ffd200;
+  font-size:13px;
+  min-width:180px;
+  flex-shrink:0;
+}
+
+/* 控件样式 */
+.setting-control { margin-left:auto; display:flex; align-items:center; gap:8px; }
+
+/* 复选框 */
+.wow-check {
+  width:20px; height:20px;
+  appearance:none;
+  background:#222;
+  border:2px solid #888;
+  border-radius:2px;
+  cursor:pointer;
+  position:relative;
+}
+.wow-check:checked {
+  background:#444;
+  border-color:#ffd200;
+}
+.wow-check:checked::after {
+  content:'✓';
+  color:#ffd200;
+  font-size:14px;
+  position:absolute;
+  top:-2px; left:2px;
+}
+
+/* 滑动条 */
+.wow-slider-wrap { display:flex; align-items:center; gap:8px; }
+.wow-slider {
+  -webkit-appearance:none;
+  width:180px; height:6px;
+  background:linear-gradient(90deg,#333,#555);
+  border-radius:3px;
+  cursor:pointer;
+}
+.wow-slider::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:14px; height:14px;
+  background:linear-gradient(180deg,#888,#555);
+  border:1px solid #aaa;
+  border-radius:50%;
+  cursor:pointer;
+}
+.slider-value { color:#0f0; font-size:14px; min-width:40px; text-align:right; font-weight:bold; }
+
+/* 下拉菜单 */
+.wow-dropdown {
+  background:linear-gradient(180deg,#3a3a4a,#2a2a3a);
+  color:#fff;
+  border:1px solid #666;
+  padding:3px 24px 3px 8px;
+  border-radius:2px;
+  font-size:12px;
+  cursor:pointer;
+  min-width:160px;
+}
+
+/* 颜色块 */
+.color-block {
+  width:160px; height:20px;
+  border:1px solid #888;
+  border-radius:2px;
+  cursor:pointer;
+  transition:opacity .2s;
+}
+.color-block:hover { opacity:0.8; }
+
+/* 复选框+颜色块组合 */
+.check-color-wrap { display:flex; align-items:center; gap:8px; }
+
+/* 底部按钮 */
+.bottom-bar { display:flex; align-items:center; margin-top:8px; gap:12px; }
+.link-icon { width:20px; height:20px; background:#555; border-radius:2px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; color:#ccc; }
+.link-icon:hover { background:#777; }
+.reload-btn {
+  margin-left:auto;
+  padding:4px 24px;
+  background:linear-gradient(180deg,#4a4a5a,#2a2a3a);
+  border:1px solid #666;
+  color:#fff;
+  cursor:pointer;
+  font-size:13px;
+  border-radius:2px;
+}
+.reload-btn:hover { background:linear-gradient(180deg,#5a5a6a,#3a3a4a); }
+
+/* 新标签高亮 */
+.tab-btn.new-tab { 
+  border-color:#0ff; 
+  box-shadow:0 0 8px rgba(0,255,255,0.4);
+  animation:glow 2s ease-in-out infinite;
+}
+@keyframes glow {
+  0%,100% { box-shadow:0 0 5px rgba(0,255,255,0.3); }
+  50% { box-shadow:0 0 15px rgba(0,255,255,0.6); }
+}
+</style>
+</head>
+<body>
+
+<div class="addon-panel">
+  <!-- 标题 -->
+  <div class="title-bar">
+    <span class="title-main">PlateColor</span>
+    <span class="title-sub">姓名板上的施法条</span>
+    <span class="title-version">20260318</span>
+  </div>
+
+  <!-- 标签栏 -->
+  <div class="tab-bar">
+    <div class="tab-btn active" data-tab="tab1">基础</div>
+    <div class="tab-btn" data-tab="tab2">指示器</div>
+    <div class="tab-btn" data-tab="tab3">仇恨</div>
+    <div class="tab-btn" data-tab="tab4">NPC颜色</div>
+    <div class="tab-btn" data-tab="tab5">辅助功能</div>
+    <div class="tab-btn" data-tab="tab6">配置</div>
+    <div class="tab-btn" data-tab="tab7">更新日志</div>
+    <div class="tab-btn new-tab" data-tab="tab8">敌方宠物</div>
+  </div>
+
+  <!-- 内容区域 -->
+  <div class="content-area">
+
+    <!-- ===== Tab1 基础 ===== -->
+    <div class="tab-content active" id="tab1">
+      <div class="section-title">点击范围</div>
+      <div class="setting-row"><span class="setting-label">显示点击范围</span><div class="setting-control"><input type="checkbox" class="wow-check"></div></div>
+      <div class="setting-row"><span class="setting-label">点击范围宽度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="-10" max="20" value="5"><span class="slider-value">5</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">点击范围顶部</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="-6" max="12" value="8"><span class="slider-value">8</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">点击范围底部</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="-6" max="12" value="0"><span class="slider-value">0</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">友方点击穿透</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+
+      <div class="section-title">血条</div>
+      <div class="setting-row"><span class="setting-label">血条材质选择</span><div class="setting-control"><select class="wow-dropdown"><option>PC-White</option><option>PC-Flat</option><option>PC-Gradient</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">背景透明度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="0" max="100" value="55"><span class="slider-value">0.55</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">启用直角边框</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">姓名版宽度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="50" value="25"><span class="slider-value">25</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">姓名版高度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="30" value="14"><span class="slider-value">14</span></div></div></div>
+
+      <div class="section-title">名字</div>
+      <div class="setting-row"><span class="setting-label">白色名字</span><div class="setting-control"><input type="checkbox" class="wow-check"></div></div>
+      <div class="setting-row"><span class="setting-label">名字描边</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">名字位置</span><div class="setting-control"><select class="wow-dropdown"><option>中上</option><option>左上</option><option>左中</option><option>左下</option><option>中下</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">名字垂直偏移</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="-10" max="10" value="0"><span class="slider-value">0</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">名字尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="30" value="14"><span class="slider-value">14</span></div></div></div>
+
+      <div class="section-title">友方</div>
+      <div class="setting-row"><span class="setting-label">友方玩家名字模式</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">友方NPC名字模式</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">友方玩家公会名称</span><div class="setting-control"><input type="checkbox" class="wow-check"></div></div>
+      <div class="setting-row"><span class="setting-label">友方名字模式尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="30" value="15"><span class="slider-value">15</span></div></div></div>
+
+      <div class="section-title">施法</div>
+      <div class="setting-row"><span class="setting-label">施法条材质选择</span><div class="setting-control"><select class="wow-dropdown"><option>PC-White</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">施法条高度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="30" value="18"><span class="slider-value">18</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">施法图标放大</span><div class="setting-control"><input type="checkbox" class="wow-check"></div></div>
+      <div class="setting-row"><span class="setting-label">施法名称位置</span><div class="setting-control"><select class="wow-dropdown"><option>左</option><option selected>中</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">施法剩余时间</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">施法条文本尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="8" max="30" value="11"><span class="slider-value">11</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">施法目标名字位置</span><div class="setting-control"><select class="wow-dropdown"><option>右侧内部</option><option>右侧外部</option><option>右中</option><option selected>右上</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">施法目标名字尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="8" max="30" value="22"><span class="slider-value">22</span></div></div></div>
+
+      <div class="section-title">生命值</div>
+      <div class="setting-row"><span class="setting-label">生命值数值</span><div class="setting-control"><input type="checkbox" class="wow-check"></div></div>
+      <div class="setting-row"><span class="setting-label">生命值百分比</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">生命值文本尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="8" max="30" value="13"><span class="slider-value">13</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">数值格式</span><div class="setting-control"><select class="wow-dropdown"><option>万,亿</option><option>K,M</option><option selected>暴雪默认</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">分隔符</span><div class="setting-control"><select class="wow-dropdown"><option></option><option selected>( )</option><option>:</option><option>|</option><option>/</option><option>-</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">生命值文本位置</span><div class="setting-control"><select class="wow-dropdown"><option>左</option><option>中</option><option selected>右</option></select></div></div>
+
+      <div class="section-title">光环</div>
+      <div class="setting-row"><span class="setting-label">隐藏光环鼠标提示</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">光环冷却时间文本尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="15" value="10"><span class="slider-value">1.0</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">上方减益光环尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="30" value="10"><span class="slider-value">1.0</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">左侧增益光环尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="30" value="15"><span class="slider-value">1.5</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">右侧控制光环尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="30" value="20"><span class="slider-value">2.0</span></div></div></div>
+
+      <div class="section-title">个人资源</div>
+      <div class="setting-row"><span class="setting-label">启用个人资源设置</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">编辑模式自动居中</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">个人资源材质</span><div class="setting-control"><select class="wow-dropdown"><option>PC-White</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">个人资源宽度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="150" max="400" value="200"><span class="slider-value">200</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">个人资源高度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="40" value="15"><span class="slider-value">15</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">个人资源数值</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">额外资源模式</span><div class="setting-control"><select class="wow-dropdown"><option>暴雪原版</option><option>新版资源条</option><option selected>精简2行</option></select></div></div>
+    </div>
+
+    <!-- ===== Tab2 指示器 ===== -->
+    <div class="tab-content" id="tab2">
+      <div class="section-title">箭头</div>
+      <div class="setting-row"><span class="setting-label">箭头显示方式</span><div class="setting-control"><select class="wow-dropdown"><option>不显示</option><option>左</option><option>右</option><option selected>左+右</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">箭头材质</span><div class="setting-control"><select class="wow-dropdown"><option selected>EthricArrow2</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">箭头颜色</span><div class="setting-control"><div class="color-block" style="background:#fff"></div></div></div>
+      <div class="setting-row"><span class="setting-label">箭头尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="5" max="50" value="20"><span class="slider-value">20</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">箭头水平偏移</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="-10" max="10" value="0"><span class="slider-value">0</span></div></div></div>
+
+      <div class="section-title">交互</div>
+      <div class="setting-row"><span class="setting-label">斩杀辅助线</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#fff;width:130px"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">斩杀血条变色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#f0f;width:130px"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">当前目标颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#0ff;width:130px"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">焦点血条颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check"><div class="color-block" style="background:rgb(255,179,204);width:130px"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">鼠标指向边框变色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#0ff;width:130px"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">焦点斜线材质</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+
+      <div class="section-title">CVars</div>
+      <div class="setting-row"><span class="setting-label">当前目标尺寸</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="10" max="20" value="12"><span class="slider-value">1.2</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">隔墙姓名板透明度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="0" max="10" value="10"><span class="slider-value">1.0</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">非当前目标透明度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="0" max="10" value="10"><span class="slider-value">1.0</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">垂直堆叠间距</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="1" max="20" value="11"><span class="slider-value">1.1</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">水平堆叠间距</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="1" max="20" value="8"><span class="slider-value">0.8</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">姓名版可见范围</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider" min="10" max="60" value="60"><span class="slider-value">60</span></div></div></div>
+
+      <div class="section-title">其他</div>
+      <div class="setting-row"><span class="setting-label">显示任务标志</span><div class="setting-control"><select class="wow-dropdown"><option>不显示</option><option>名字后</option><option selected>血条后</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">等级文本</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+      <div class="setting-row"><span class="setting-label">吸收盾数值</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+    </div>
+
+    <!-- ===== Tab3 仇恨 ===== -->
+    <div class="tab-content" id="tab3">
+      <div class="section-title">其他颜色</div>
+      <div class="setting-row"><span class="setting-label">全局颜色</span><div class="setting-control"><div class="color-block" style="background:#f00"></div></div></div>
+
+      <div class="section-title">仇恨</div>
+      <div class="setting-row"><span class="setting-label">颜色作用于</span><div class="setting-control"><select class="wow-dropdown"><option>无</option><option>名字</option><option selected>血条</option><option>名字+血条</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">低仇恨</span><div class="setting-control"><div class="color-block" style="background:#f00"></div></div></div>
+      <div class="setting-row"><span class="setting-label">高仇恨</span><div class="setting-control"><div class="color-block" style="background:rgb(255,128,0)"></div></div></div>
+      <div class="setting-row"><span class="setting-label">仇恨是你</span><div class="setting-control"><div class="color-block" style="background:rgb(77,0,153)"></div></div></div>
+      <div class="setting-row"><span class="setting-label">仇恨不稳</span><div class="setting-control"><div class="color-block" style="background:rgb(51,77,153)"></div></div></div>
+
+      <div class="section-title">坦克仇恨</div>
+      <div class="setting-row"><span class="setting-label">颜色作用于</span><div class="setting-control"><select class="wow-dropdown"><option>无</option><option>名字</option><option selected>血条</option><option>名字+血条</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">低仇恨</span><div class="setting-control"><div class="color-block" style="background:#f00"></div></div></div>
+      <div class="setting-row"><span class="setting-label">高仇恨</span><div class="setting-control"><div class="color-block" style="background:rgb(255,128,0)"></div></div></div>
+      <div class="setting-row"><span class="setting-label">仇恨是你</span><div class="setting-control"><div class="color-block" style="background:rgb(77,0,153)"></div></div></div>
+      <div class="setting-row"><span class="setting-label">仇恨不稳</span><div class="setting-control"><div class="color-block" style="background:rgb(51,77,153)"></div></div></div>
+    </div>
+
+    <!-- ===== Tab4 NPC颜色 ===== -->
+    <div class="tab-content" id="tab4">
+      <div class="section-title">NPC颜色作用于</div>
+      <div class="setting-row"><span class="setting-label">NPC颜色作用于</span><div class="setting-control"><select class="wow-dropdown"><option>无</option><option selected>名字</option><option>血条</option><option>名字+血条</option></select></div></div>
+
+      <div class="section-title">NPC分类</div>
+      <div class="setting-row"><span class="setting-label">等级>1颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#f0f;width:130px"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">BOSS颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#f0f;width:130px"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">可打断NPC颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#00f;width:130px"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">不可打断NPC颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#0ff;width:130px;opacity:0.5"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">可能是可打断NPC颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check" checked><div class="color-block" style="background:#0ff;width:130px"></div></div></div></div>
+    </div>
+
+    <!-- ===== Tab5 辅助功能 ===== -->
+    <div class="tab-content" id="tab5">
+      <div class="section-title">焦点</div>
+      <div class="setting-row"><span class="setting-label">设置焦点快捷键</span><div class="setting-control"><select class="wow-dropdown"><option>不使用</option><option selected>Shift</option><option>Ctrl</option><option>Alt</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">设置焦点时自动标记</span><div class="setting-control"><select class="wow-dropdown"><option selected>不标记</option><option>⭐</option><option>🔴</option><option>🔵</option><option>🟢</option></select></div></div>
+      <div class="setting-row"><span class="setting-label">就位时通报标记</span><div class="setting-control"><input type="checkbox" class="wow-check" checked></div></div>
+    </div>
+
+    <!-- ===== Tab6 配置 ===== -->
+    <div class="tab-content" id="tab6">
+      <div class="section-title">&nbsp;</div>
+      <div class="section-title">恢复插件默认设置</div>
+      <div class="setting-row"><span class="setting-label"></span><div class="setting-control"><button class="reload-btn" style="margin-left:0">恢复插件默认设置</button></div></div>
+
+      <div class="section-title">&nbsp;</div>
+      <div class="section-title">配置导出</div>
+      <div class="setting-row"><span class="setting-label"></span><div class="setting-control"><button class="reload-btn" style="margin-left:0">导出当前配置</button></div></div>
+
+      <div class="section-title">&nbsp;</div>
+      <div class="section-title">配置导入</div>
+      <div class="setting-row"><span class="setting-label"></span><div class="setting-control"><button class="reload-btn" style="margin-left:0">导入配置</button></div></div>
+    </div>
+
+    <!-- ===== Tab7 更新日志 ===== -->
+    <div class="tab-content" id="tab7">
+      <div style="padding:8px 10px;">
+        <div style="background:rgba(128,128,128,0.1);padding:8px 12px;margin:4px 0;border-radius:2px;"><span style="color:#0ff">20260318 : </span><span style="color:#ccc">修复了当不可攻击变为可攻击时,名字位置不正确的问题,以及血条没有正确显隐的问题<br>修复了辅助功能标记报错的问题</span></div>
+        <div style="background:rgba(128,128,128,0.05);padding:8px 12px;margin:4px 0;border-radius:2px;"><span style="color:#0ff">20260316.1 : </span><span style="color:#aaa">修复了NPC染色应用于血条+斩杀血条变色导致报错的问题<br>友方玩家名字现在固定不显示服务器名</span></div>
+        <div style="background:rgba(128,128,128,0.1);padding:8px 12px;margin:4px 0;border-radius:2px;"><span style="color:#0ff">20260314 : </span><span style="color:#999">修复一个斩杀变色导致的报错问题</span></div>
+        <div style="background:rgba(128,128,128,0.05);padding:8px 12px;margin:4px 0;border-radius:2px;"><span style="color:#0ff">20260313 : </span><span style="color:#999">解决斩杀颜色会污染仇恨颜色的问题<br>性能优化</span></div>
+        <div style="background:rgba(128,128,128,0.1);padding:8px 12px;margin:4px 0;border-radius:2px;"><span style="color:#0ff">20260304 : </span><span style="color:#999">修复不显示名字时依然显示箭头的问题<br>略微调小了仆从的姓名板尺寸<br>重构事件相关代码</span></div>
+      </div>
+    </div>
+
+    <!-- ===== Tab8 敌方宠物 (NEW!) ===== -->
+    <div class="tab-content" id="tab8">
+      <div class="section-title" style="color:#0ff">🐾 敌方宠物 <span style="font-size:12px;color:#f80;background:#f802;padding:2px 8px;border-radius:10px;margin-left:8px;">NEW</span></div>
+      <div class="setting-row"><span class="setting-label">启用敌方宠物自定义</span><div class="setting-control"><input type="checkbox" class="wow-check" id="petEnable" checked></div></div>
+
+      <div class="section-title">未选中时</div>
+      <div class="setting-row"><span class="setting-label">宠物宽度偏移</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="-50" max="0" value="-27" data-fmt="int"><span class="slider-value">-27</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">宠物高度比例</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="30" max="150" value="70" data-fmt="pct"><span class="slider-value">0.70</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">宠物施法条高度比例</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="30" max="150" value="70" data-fmt="pct"><span class="slider-value">0.70</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">宠物施法文本比例</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="30" max="150" value="70" data-fmt="pct"><span class="slider-value">0.70</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">宠物施法目标比例</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="30" max="150" value="70" data-fmt="pct"><span class="slider-value">0.70</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">宠物透明度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="10" max="100" value="100" data-fmt="pct"><span class="slider-value">1.00</span></div></div></div>
+
+      <div class="section-title">选中时</div>
+      <div class="setting-row"><span class="setting-label">选中时宠物宽度偏移</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="-50" max="10" value="-15" data-fmt="int"><span class="slider-value">-15</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">选中时宠物高度比例</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="30" max="150" value="85" data-fmt="pct"><span class="slider-value">0.85</span></div></div></div>
+      <div class="setting-row"><span class="setting-label">选中时宠物透明度</span><div class="setting-control"><div class="wow-slider-wrap"><input type="range" class="wow-slider pet-ctrl" min="10" max="100" value="100" data-fmt="pct"><span class="slider-value">1.00</span></div></div></div>
+
+      <div class="section-title">颜色</div>
+      <div class="setting-row"><span class="setting-label">宠物血条颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check"><div class="color-block" style="background:rgb(255,102,0);width:130px" id="petBarColorBlock"></div></div></div></div>
+      <div class="setting-row"><span class="setting-label">宠物名字颜色</span><div class="setting-control"><div class="check-color-wrap"><input type="checkbox" class="wow-check"><div class="color-block" style="background:rgb(255,153,51);width:130px" id="petNameColorBlock"></div></div></div></div>
+    </div>
+
+  </div>
+
+  <!-- 底部 -->
+  <div class="bottom-bar">
+    <div class="link-icon" title="CurseForge">CF</div>
+    <div class="link-icon" title="NGA">N</div>
+    <div class="link-icon" title="Bilibili">B</div>
+    <div class="link-icon" title="抖音">D</div>
+    <button class="reload-btn">重载</button>
+  </div>
+</div>
+
+<script>
+// 标签切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// 滑动条值更新
+document.querySelectorAll('.wow-slider').forEach(slider => {
+  slider.addEventListener('input', function() {
+    const val = this.parentElement.querySelector('.slider-value');
+    if (this.dataset.fmt === 'pct') {
+      val.textContent = (this.value / 100).toFixed(2);
+    } else if (this.dataset.fmt === 'int') {
+      val.textContent = this.value;
+    } else {
+      val.textContent = this.value;
+    }
+  });
+});
+
+// 颜色块点击
+document.querySelectorAll('.color-block').forEach(block => {
+  block.addEventListener('click', function() {
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.value = rgbToHex(getComputedStyle(this).backgroundColor);
+    input.addEventListener('input', (e) => {
+      this.style.background = e.target.value;
+    });
+    input.click();
+  });
+});
+
+function rgbToHex(rgb) {
+  const match = rgb.match(/\d+/g);
+  if (!match) return '#ffffff';
+  return '#' + match.slice(0,3).map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
+}
+</script>
+</body>
+</html>
