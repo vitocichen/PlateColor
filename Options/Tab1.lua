@@ -64,6 +64,7 @@ local castTextScale = ns.AddSetSlider(ConFrame1,1,L["施法条文本尺寸"],L["
 local castTargettable = {{L["右侧内部"],1},{L["右侧外部"],2},{L["右中"],3},{L["右上"],4}}
 local castTargetPoint = ns.AddSetDropdM(ConFrame1,1,L["施法目标名字位置"],L["施法目标名字位置"],castTargettable,"castTargetPoint",ns.SetPoints)
 local castTargetSize = ns.AddSetSlider(ConFrame1,1,L["施法目标名字尺寸"],L["施法目标名字尺寸"],8,30,1,"%d","castTargetScale",ns.SetPoints)
+local castRealTarget = ns.AddSetClickB(ConFrame1,1,L["施法真实目标"],L["施法真实目标鼠标提示"],"castRealTarget")
 
 local HitTest = ns.AddSetTiText(ConFrame1,1,L["生命值"])
 local hpValue = ns.AddSetClickB(ConFrame1,1,L["生命值数值"],L["生命值数值"],"hpValue")

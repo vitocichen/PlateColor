@@ -66,6 +66,8 @@ ns.enUS = {
 ["施法条文本尺寸"] = "Cast Bar Text Size",
 ["施法目标名字位置"] = "Cast Target Name Position",
 ["施法目标名字尺寸"] = "Cast Target Name Size",
+["施法真实目标"] = "Real Cast Target",
+["施法真实目标鼠标提示"] = "Show the real spell target name on the cast bar, colored by class",
 
 ["生命值"] = "Health",
 ["生命值数值"] = "Health Value",

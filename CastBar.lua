@@ -79,3 +79,54 @@ hooksecurefunc(NamePlateCastingBarMixin,"OnUpdate", function(self,elapsed)
 		self.PCCastTimeText:SetText(string.format("%.1f", UnitChannelDuration(self.unit):GetRemainingDuration()))
 	end
 end)
+
+--施法真实目标
+local CastStartEvents = {
+	UNIT_SPELLCAST_START = true,
+	UNIT_SPELLCAST_CHANNEL_START = true,
+	UNIT_SPELLCAST_EMPOWER_START = true,
+}
+
+local function GetRealCastTarget(unit)
+	local name, class
+	if UnitSpellTargetName then
+		name = UnitSpellTargetName(unit)
+		if name and UnitSpellTargetClass then
+			class = UnitSpellTargetClass(unit)
+		end
+	end
+	if not name then
+		name = UnitName(unit .. "target")
+		if name then
+			_, class = UnitClass(unit .. "target")
+		end
+	end
+	return name, class
+end
+
+local function ColorNameByClass(name, class)
+	if not name then return nil end
+	if class then
+		local color = C_ClassColor and C_ClassColor.GetClassColor(class) or RAID_CLASS_COLORS[class]
+		if color and color.WrapTextInColorCode then
+			return color:WrapTextInColorCode(name)
+		end
+	end
+	return name
+end
+
+hooksecurefunc(NamePlateCastingBarMixin, "OnEvent", function(self, event)
+	if not PlateColorDB.castRealTarget then return end
+	if not self.unit then return end
+	if self:IsForbidden() then return end
+
+	if CastStartEvents[event] then
+		local spell = UnitCastingInfo(self.unit) or UnitChannelInfo(self.unit)
+		if not spell then return end
+
+		local name, class = GetRealCastTarget(self.unit)
+		if name then
+			self.Text:SetText(spell .. ": " .. ColorNameByClass(name, class))
+		end
+	end
+end)

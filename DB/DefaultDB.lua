@@ -28,6 +28,7 @@ ns.PlateColorDB = {
 	castTextScale = 11,			--施法条文本大小
 	castTargetPoint = 4,		--施法目标名字位置
 	castTargetScale = 22,		--施法目标名字大小
+	castRealTarget = false,		--施法真实目标
 	
 	onlyName = true,                        --友方玩家名字模式
 	onlyNameClassColor = true,              --友方玩家名字模式职业染色

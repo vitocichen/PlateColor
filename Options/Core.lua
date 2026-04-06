@@ -32,6 +32,12 @@ TiText2:SetPoint("BOTTOMLEFT",TiText,"BOTTOMRIGHT", 5, 8)
 TiText2:SetFont(ns.fonts, 20, "OUTLINE")
 TiText2:SetText(SHOW_TARGET_CASTBAR_IN_V_KEY)
 TiText2:SetVertexColor(1.0, 1.0, 1.0)
+--DIY信息
+local TiText3 = PCGUI:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+TiText3:SetPoint("BOTTOMLEFT",TiText2,"BOTTOMRIGHT", 8, 0)
+TiText3:SetFont(ns.fonts, 16, "OUTLINE")
+TiText3:SetText("|cff00FF00DIY-DK-姜世离|r |cffAAAAAAP(友方职业图标, 真实目标施法)|r")
+TiText3:SetVertexColor(1.0, 1.0, 1.0)
 
 --版本信息
 local versiontext = PCGUI:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
