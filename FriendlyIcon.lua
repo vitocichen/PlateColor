@@ -7,10 +7,10 @@ local _, ns = ...
 	- 完全不触碰敌方姓名版
 	- 使用 SetIgnoreParentAlpha(true) 让图标独立
 	- 用 SetText("") 隐藏名字而非 SetAlpha(0)
+	- 用 SetAlpha(0) 隐藏血条（仿BBP的HideFriendlyHealthbar）
 ]]
 
--- friendlyIconMode: 0=不使用, 1=职业图标, 2=角色图标
--- onlyName: true 时为名字模式（暴雪CVar控制）
+-- friendlyIconMode: 0=不使用(显示名字), 1=职业图标, 2=角色图标
 
 local CLASS_ICON_ATLAS = {
 	["WARRIOR"] = "classicon-warrior",
@@ -38,7 +38,7 @@ local function IsFriendlyUnit(unit)
 	return reaction and reaction >= 5
 end
 
--- 创建或获取图标框体
+-- 创建或获取图标框体（带圆形遮罩）
 local function GetOrCreateIcon(frame)
 	if frame.PCFriendlyIcon then return frame.PCFriendlyIcon end
 
@@ -51,9 +51,45 @@ local function GetOrCreateIcon(frame)
 	icon.texture = icon:CreateTexture(nil, "OVERLAY")
 	icon.texture:SetAllPoints()
 
+	-- 圆形遮罩
+	local mask = icon:CreateMaskTexture()
+	mask:SetAllPoints(icon.texture)
+	mask:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	icon.texture:AddMaskTexture(mask)
+	icon.mask = mask
+
 	icon:Hide()
 	frame.PCFriendlyIcon = icon
 	return icon
+end
+
+-- 隐藏友方玩家的血条（仿照BBP的SetAlpha(0)方式，不依赖暴雪CVar和showOnlyName）
+local function HideFriendlyPlayerBars(frame)
+	if frame.HealthBarsContainer then
+		frame.HealthBarsContainer:SetAlpha(0)
+	end
+	if frame.selectionHighlight then
+		frame.selectionHighlight:SetAlpha(0)
+	end
+	if frame.castBar then
+		frame.castBar:SetAlpha(0)
+	end
+	frame.PCFriendlyBarsHidden = true
+end
+
+-- 恢复血条显示（友方→敌方切换时使用）
+local function RestoreFriendlyPlayerBars(frame)
+	if not frame.PCFriendlyBarsHidden then return end
+	if frame.HealthBarsContainer then
+		frame.HealthBarsContainer:SetAlpha(1)
+	end
+	if frame.selectionHighlight then
+		frame.selectionHighlight:SetAlpha(1)
+	end
+	if frame.castBar then
+		frame.castBar:SetAlpha(1)
+	end
+	frame.PCFriendlyBarsHidden = nil
 end
 
 -- 处理姓名版添加事件
@@ -72,14 +108,18 @@ local function HandleNamePlateAdded(unit)
 		-- 恢复可能被修改的名字
 		if frame.PCFriendlyIconNameHidden then
 			frame.PCFriendlyIconNameHidden = nil
-			-- 名字会在暴雪的 CompactUnitFrame_UpdateName 中自然恢复
 		end
+		-- 恢复血条
+		RestoreFriendlyPlayerBars(frame)
 		return
 	end
 
+	-- 友方玩家：始终隐藏血条（不论图标模式还是名字模式）
+	HideFriendlyPlayerBars(frame)
+
 	local mode = PlateColorDB.friendlyIconMode or 0
 	if mode == 0 then
-		-- 不使用友方图标，确保清理
+		-- 名字模式：不显示图标，只显示名字（血条已隐藏）
 		if frame.PCFriendlyIcon then
 			frame.PCFriendlyIcon:Hide()
 		end
@@ -146,16 +186,13 @@ local function HandleNamePlateRemoved(unit)
 	-- 恢复名字显示
 	if frame.PCFriendlyIconNameHidden then
 		frame.PCFriendlyIconNameHidden = nil
-		-- 名字 alpha 保持为1，文本会在暴雪下次 UpdateName 时自动恢复
 		if frame.name then
 			frame.name:SetAlpha(1)
 		end
 	end
 
-	-- 恢复血条容器透明度
-	if frame.HealthBarsContainer then
-		frame.HealthBarsContainer:SetAlpha(1)
-	end
+	-- 恢复血条
+	RestoreFriendlyPlayerBars(frame)
 end
 
 -- 刷新所有已存在的姓名版（设置变更时调用）
@@ -180,6 +217,38 @@ eventFrame:SetScript("OnEvent", function(self, event, unit)
 		HandleNamePlateAdded(unit)
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
 		HandleNamePlateRemoved(unit)
+	end
+end)
+
+-- Hook OnUnitFactionChanged：友方→敌方时清理图标和恢复血条
+-- 仅做清理操作，不做任何设置/初始化，不影响敌方姓名版
+hooksecurefunc(NamePlateUnitFrameMixin, "OnUnitFactionChanged", function(self)
+	if not self.unit then return end
+	if self:IsForbidden() then return end
+	if not string.match(self.unit, "nameplate") then return end
+
+	-- 只在单位变成非友方时做清理
+	if not IsFriendlyUnit(self.unit) then
+		-- 隐藏图标
+		if self.PCFriendlyIcon then
+			self.PCFriendlyIcon:Hide()
+			if self.PCFriendlyIcon.model then
+				self.PCFriendlyIcon.model:ClearModel()
+				self.PCFriendlyIcon.model:Hide()
+			end
+		end
+		-- 恢复名字
+		if self.PCFriendlyIconNameHidden then
+			self.PCFriendlyIconNameHidden = nil
+			if self.name then
+				self.name:SetAlpha(1)
+			end
+		end
+		-- 恢复血条
+		RestoreFriendlyPlayerBars(self)
+	else
+		-- 单位变成友方了（如决斗结束），重新应用图标
+		HandleNamePlateAdded(self.unit)
 	end
 end)
 

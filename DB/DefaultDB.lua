@@ -30,13 +30,10 @@ ns.PlateColorDB = {
 	castTargetScale = 22,		--施法目标名字大小
 	castRealTarget = false,		--施法真实目标
 	
-	onlyName = true,                        --友方玩家名字模式
-	onlyNameClassColor = true,              --友方玩家名字模式职业染色
 	onlyNameNpc = true,                     --友方NPC名字模式
 	friendlyIconMode = 0,                   --友方玩家图标模式(0=显示名字,1=职业图标,2=角色图标)
 
 	helpNameScale = 15,                     --友方名字大小
-	showGuildName = false,		--显示公会名称
 	
 	hpValue = false,			--生命值数值
 	hpPercent = true,			--生命值百分比

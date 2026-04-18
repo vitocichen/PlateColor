@@ -16,11 +16,7 @@ function ns.PlateOnlyName(unitFrame)
 	unitFrame.NpcFuntext:SetVertexColor(1,1,1)
 	unitFrame.NpcFuntext:SetAlpha(0.9)
 	local text = ""
-	if PlateColorDB.showGuildName and unitFrame:IsPlayer() then
-		unitFrame.NpcFuntext:SetFont(ns.fonts, PlateColorDB.helpNameScale * 0.9, "OUTLINE")
-		text = GetGuildInfo(unitFrame.unit) or ""
-		unitFrame.NpcFuntext:SetText(text)
-	elseif not unitFrame:IsPlayer() then
+	if not unitFrame:IsPlayer() then
 		local tooltipData = C_TooltipInfo.GetUnit(unitFrame.unit)
 		if tooltipData and tooltipData.lines[2] and not string.match(tooltipData.lines[2].leftText,LEVEL) and not unitFrame:IsPlayer() then
 			unitFrame.NpcFuntext:SetFont(ns.fonts, PlateColorDB.helpNameScale * 0.8, "")

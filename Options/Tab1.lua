@@ -46,9 +46,6 @@ local nameVoffset = ns.AddSetSlider(ConFrame1,1,L["名字垂直偏移"],L["名�
 local NameScale = ns.AddSetSlider(ConFrame1,1,L["名字尺寸"],L["名字尺寸"],5,30,1,"%d","nameScale",ns.SetPoints)
 
 local TiText2 = ns.AddSetTiText(ConFrame1,1,L["友方"])
-local onlyName = ns.AddSetClickB(ConFrame1,1,L["友方玩家名字模式"],L["友方玩家名字模式"],"onlyName",ns.SetOnlyNames)
-local onlyNameClassColor = ns.AddSetClickB(ConFrame1,1,L["友方玩家名字模式职业染色"],L["友方玩家名字模式职业染色"],"onlyNameClassColor",ns.SetOnlyNames)
-local showGuildName = ns.AddSetClickB(ConFrame1,1,L["友方玩家公会名称"],L["友方玩家公会名称"],"showGuildName",ns.SetOnlyNames)
 local friendlyIconTable = {{L["显示名字"],0},{L["职业图标"],1},{L["角色图标"],2}}
 local friendlyIconMode = ns.AddSetDropdM(ConFrame1,1,L["友方玩家图标模式"],L["友方玩家图标模式鼠标提示"],friendlyIconTable,"friendlyIconMode",ns.RefreshFriendlyIcons)
 local onlyNameNpc = ns.AddSetClickB(ConFrame1,1,L["友方NPC名字模式"],L["友方NPC名字模式"],"onlyNameNpc",ns.SetOnlyNames)

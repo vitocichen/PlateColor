@@ -19,20 +19,14 @@ function ns.SetSelectedScale()
 	C_CVar.SetCVar("nameplateOverlapH", PlateColorDB.npOverlapH)--水平堆叠间距
 	C_CVar.SetCVar("nameplateMaxDistance", PlateColorDB.npRange)--姓名版可见范围
 	
-	if (PlateColorDB.onlyName or PlateColorDB.onlyNameNpc) and SimplifiedTypes[C_CVar.GetCVar("nameplateSimplifiedTypes")] then
+	if PlateColorDB.onlyNameNpc and SimplifiedTypes[C_CVar.GetCVar("nameplateSimplifiedTypes")] then
 		C_CVar.SetCVar("nameplateSimplifiedTypes",SimplifiedTypes[C_CVar.GetCVar("nameplateSimplifiedTypes")])--去除友方玩家姓名版选项防止副本内不显示
 	end
 	if C_CVar.GetCVar("nameplateInfoDisplay") ~="" and C_CVar.GetCVar("nameplateInfoDisplay") ~="D" then
 		C_CVar.SetCVar("nameplateInfoDisplay","D")--去掉血量百分比显示
 	end
-	if C_CVar.GetCVar("nameplateShowOnlyNameForFriendlyPlayerUnits") then
-		local UseonlyName = PlateColorDB.onlyName and 1 or 0
-		C_CVar.SetCVar("nameplateShowOnlyNameForFriendlyPlayerUnits",UseonlyName)--友方玩家只显示名字
-	end
-	if C_CVar.GetCVar("nameplateUseClassColorForFriendlyPlayerUnitNames") then
-		local UseClassColor = PlateColorDB.onlyNameClassColor and 1 or 0
-		C_CVar.SetCVar("nameplateUseClassColorForFriendlyPlayerUnitNames",UseClassColor)--友方玩家名字使用职业颜色
-	end
+	C_CVar.SetCVar("nameplateShowOnlyNameForFriendlyPlayerUnits","0")--由FriendlyIcon模块通过SetAlpha(0)管理
+	C_CVar.SetCVar("nameplateUseClassColorForFriendlyPlayerUnitNames","1")--友方玩家名字使用职业颜色
 	if TextureLoadingGroupMixin and NamePlateFriendlyFrameOptions then--取消服务器名称显示12.0.1 (66384)
 		TextureLoadingGroupMixin.RemoveTexture({ textures = NamePlateFriendlyFrameOptions }, "updateNameUsesGetUnitName")
 	end

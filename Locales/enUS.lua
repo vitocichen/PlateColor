@@ -50,11 +50,8 @@ ns.enUS = {
 ["姓名版高度"] = "Nameplate Height",
 
 ["友方"] = "Friendly",
-["友方玩家名字模式"] = "Friendly Player Name Mode",
-["友方玩家名字模式职业染色"] = "Friendly Player Name Mode Class Color",
 ["友方NPC名字模式"] = "Friendly NPC Name Mode",
 ["友方名字模式尺寸"] = "Friendly Name Mode Size",
-["友方玩家公会名称"] = "Friendly Player Guild Name",
 ["友方玩家图标模式"] = "Friendly Player Icon Mode",
 ["友方玩家图标模式鼠标提示"] = "Choose display mode for friendly player nameplates\nShow Name: Use default Blizzard name mode\nClass Icon: Show class icon instead of name\nPortrait: Show 3D portrait instead of name",
 ["显示名字"] = "Show Name",
