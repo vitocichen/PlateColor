@@ -28,7 +28,11 @@ local CLASS_ICON_ATLAS = {
 	["EVOKER"] = "classicon-evoker",
 }
 
-local ICON_SIZE = 30
+-- BBP 风格尺寸（参考 BBP classIcon.lua 的 Circle 分支）
+local FRAME_SIZE    = 30   -- 外层 frame（= border SetAllPoints 的范围）
+local ICON_SIZE     = 26   -- 实际图标（略小于 frame，给 border 留出金边空间）
+local HIGHLIGHT_SIZE = 40  -- 目标高亮环尺寸（略大于 frame）
+
 local eventFrame = CreateFrame("Frame")
 
 -- 判断单位是否为友方（reaction >= 5）
@@ -38,25 +42,43 @@ local function IsFriendlyUnit(unit)
 	return reaction and reaction >= 5
 end
 
--- 创建或获取图标框体（带圆形遮罩）
+-- 创建或获取图标框体（仿 BBP：icon + mask + border + highlightSelect）
 local function GetOrCreateIcon(frame)
 	if frame.PCFriendlyIcon then return frame.PCFriendlyIcon end
 
 	local icon = CreateFrame("Frame", nil, frame)
-	icon:SetSize(ICON_SIZE, ICON_SIZE)
+	icon:SetSize(FRAME_SIZE, FRAME_SIZE)
 	icon:SetPoint("CENTER", frame, "CENTER", 0, 0)
 	icon:SetIgnoreParentAlpha(true) -- 关键：不受父级透明度影响
 	icon:SetFrameStrata("HIGH")
 
-	icon.texture = icon:CreateTexture(nil, "OVERLAY")
-	icon.texture:SetAllPoints()
+	-- 1) 图标本体（BORDER 层，实际内容）
+	icon.texture = icon:CreateTexture(nil, "BORDER")
+	icon.texture:SetSize(ICON_SIZE, ICON_SIZE)
+	icon.texture:SetPoint("CENTER", icon, "CENTER", 0, 0)
+	-- 扩展采样区域避免图标边缘被裁切（BBP 同款 trick）
+	icon.texture:SetTexCoord(-0.06, 1.05, -0.06, 1.05)
 
-	-- 圆形遮罩
+	-- 2) 圆形遮罩（用暴雪内置的 CircleMaskScalable，比 TempPortraitAlphaMask 边缘更干净）
 	local mask = icon:CreateMaskTexture()
-	mask:SetAllPoints(icon.texture)
-	mask:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	mask:SetTexture("Interface/Masks/CircleMaskScalable", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	mask:SetSize(ICON_SIZE, ICON_SIZE)
+	mask:SetPoint("CENTER", icon.texture)
 	icon.texture:AddMaskTexture(mask)
 	icon.mask = mask
+
+	-- 3) 金色边框（BBP 同款 AutoQuest-badgeborder）
+	icon.border = icon:CreateTexture(nil, "OVERLAY", nil, 6)
+	icon.border:SetAtlas("AutoQuest-badgeborder")
+	icon.border:SetAllPoints(icon)
+
+	-- 4) 目标高亮环（charactercreate-ring-select，金色 1,0.88,0）
+	icon.highlight = icon:CreateTexture(nil, "OVERLAY", nil, 7)
+	icon.highlight:SetAtlas("charactercreate-ring-select")
+	icon.highlight:SetPoint("CENTER", icon, "CENTER", 0, 0)
+	icon.highlight:SetSize(HIGHLIGHT_SIZE, HIGHLIGHT_SIZE)
+	icon.highlight:SetVertexColor(1, 0.88, 0)
+	icon.highlight:Hide()
 
 	icon:Hide()
 	frame.PCFriendlyIcon = icon
@@ -136,22 +158,28 @@ local function HandleNamePlateAdded(unit)
 		local _, classFile = UnitClass(unit)
 		if classFile and CLASS_ICON_ATLAS[classFile] then
 			icon.texture:SetAtlas(CLASS_ICON_ATLAS[classFile])
+			-- 职业图标用 atlas 后要重新应用 TexCoord 扩展
+			icon.texture:SetTexCoord(-0.06, 1.05, -0.06, 1.05)
 			icon:Show()
 		else
 			icon:Hide()
 			return
 		end
 	elseif mode == 2 then
-		-- 角色图标（3D头像）
-		if icon.model == nil then
-			icon.model = CreateFrame("PlayerModel", nil, icon)
-			icon.model:SetAllPoints()
-			icon.model:SetPortraitZoom(1)
-		end
-		icon.texture:SetTexture(nil)
-		icon.model:SetUnit(unit)
-		icon.model:Show()
+		-- 角色图标（2D 头像，用 SetPortraitTexture 比 PlayerModel 清晰得多）
+		SetPortraitTexture(icon.texture, unit)
+		-- 头像贴图坐标是 0~1 整图，不要用扩展 TexCoord，否则会裁掉人脸
+		icon.texture:SetTexCoord(0, 1, 0, 1)
 		icon:Show()
+	end
+
+	-- 目标高亮环：仅在该姓名板为当前 target 时显示
+	if icon.highlight then
+		if UnitIsUnit(unit, "target") then
+			icon.highlight:Show()
+		else
+			icon.highlight:Hide()
+		end
 	end
 
 	-- 隐藏名字：使用 SetText("") 而非 SetAlpha(0)
@@ -176,10 +204,8 @@ local function HandleNamePlateRemoved(unit)
 	-- 隐藏图标
 	if frame.PCFriendlyIcon then
 		frame.PCFriendlyIcon:Hide()
-		-- 清理3D模型
-		if frame.PCFriendlyIcon.model then
-			frame.PCFriendlyIcon.model:ClearModel()
-			frame.PCFriendlyIcon.model:Hide()
+		if frame.PCFriendlyIcon.highlight then
+			frame.PCFriendlyIcon.highlight:Hide()
 		end
 	end
 
@@ -193,6 +219,23 @@ local function HandleNamePlateRemoved(unit)
 
 	-- 恢复血条
 	RestoreFriendlyPlayerBars(frame)
+end
+
+-- 更新所有已显示友方图标的 target 高亮环
+local function UpdateAllTargetHighlights()
+	for _, nameplate in ipairs(C_NamePlate.GetNamePlates()) do
+		local frame = nameplate.UnitFrame
+		if frame and not frame:IsForbidden() and frame.PCFriendlyIcon and frame.PCFriendlyIcon:IsShown() then
+			local unit = frame.unit
+			if unit and frame.PCFriendlyIcon.highlight then
+				if UnitIsUnit(unit, "target") then
+					frame.PCFriendlyIcon.highlight:Show()
+				else
+					frame.PCFriendlyIcon.highlight:Hide()
+				end
+			end
+		end
+	end
 end
 
 -- 刷新所有已存在的姓名版（设置变更时调用）
@@ -212,11 +255,14 @@ end
 -- 注册事件
 eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 eventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 eventFrame:SetScript("OnEvent", function(self, event, unit)
 	if event == "NAME_PLATE_UNIT_ADDED" then
 		HandleNamePlateAdded(unit)
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
 		HandleNamePlateRemoved(unit)
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		UpdateAllTargetHighlights()
 	end
 end)
 
@@ -232,9 +278,8 @@ hooksecurefunc(NamePlateUnitFrameMixin, "OnUnitFactionChanged", function(self)
 		-- 隐藏图标
 		if self.PCFriendlyIcon then
 			self.PCFriendlyIcon:Hide()
-			if self.PCFriendlyIcon.model then
-				self.PCFriendlyIcon.model:ClearModel()
-				self.PCFriendlyIcon.model:Hide()
+			if self.PCFriendlyIcon.highlight then
+				self.PCFriendlyIcon.highlight:Hide()
 			end
 		end
 		-- 恢复名字
@@ -272,4 +317,30 @@ hooksecurefunc("CompactUnitFrame_UpdateName", function(unitFrame)
 	if unitFrame.NpcFuntext then
 		unitFrame.NpcFuntext:Hide()
 	end
+end)
+
+-- 持续压制友方施法条
+-- 原因：HideFriendlyPlayerBars 里的 SetAlpha(0) 只在 UNIT_ADDED 触发一次，
+-- 施法开始时暴雪的 NamePlateCastingBarMixin:OnEvent(UNIT_SPELLCAST_START) 会
+-- 重新 Show() 并恢复 alpha，导致友方施法条又冒出来。
+-- 解法：hook OnShow，凡是当前姓名版已被标记 PCFriendlyBarsHidden 的，直接把
+-- 施法条 alpha 压回 0（不调用 Hide，避免破坏暴雪内部事件循环状态）。
+local function SuppressCastBarIfFriendly(castBar)
+	if not castBar or castBar:IsForbidden() then return end
+	local unit = castBar.unit
+	if not unit or not string.match(unit, "nameplate") then return end
+	local nameplate = C_NamePlate.GetNamePlateForUnit(unit)
+	if not nameplate then return end
+	local frame = nameplate.UnitFrame
+	if frame and frame.PCFriendlyBarsHidden then
+		castBar:SetAlpha(0)
+	end
+end
+
+hooksecurefunc(NamePlateCastingBarMixin, "OnEvent", function(self)
+	SuppressCastBarIfFriendly(self)
+end)
+
+hooksecurefunc(NamePlateCastingBarMixin, "OnShow", function(self)
+	SuppressCastBarIfFriendly(self)
 end)
