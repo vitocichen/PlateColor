@@ -10,7 +10,7 @@ local _, ns = ...
 	- 用 SetAlpha(0) 隐藏血条（仿BBP的HideFriendlyHealthbar）
 ]]
 
--- friendlyIconMode: 0=不使用(显示名字), 1=职业图标, 2=专精图标（治疗/坦克/DPS都显示对应专精icon）
+-- friendlyIconMode: 0=不使用(显示名字), 1=职业图标, 2=角色图标（治疗十字/坦克盾牌/DPS专精图标）
 
 local CLASS_ICON_ATLAS = {
 	["WARRIOR"] = "classicon-warrior",
@@ -27,6 +27,32 @@ local CLASS_ICON_ATLAS = {
 	["DEMONHUNTER"] = "classicon-demonhunter",
 	["EVOKER"] = "classicon-evoker",
 }
+
+-- 治疗专精（仿 BBP HealerSpecs）
+local HEALER_SPECS = {
+	[105]  = true, -- 德鲁伊 恢复
+	[270]  = true, -- 武僧 织雾
+	[65]   = true, -- 圣骑士 神圣
+	[256]  = true, -- 牧师 戒律
+	[257]  = true, -- 牧师 神圣
+	[264]  = true, -- 萨满 恢复
+	[1468] = true, -- 唤魔师 生命缚灵
+}
+
+-- 坦克专精（仿 BBP TankSpecs）
+local TANK_SPECS = {
+	[250] = true, -- 死亡骑士 鲜血
+	[581] = true, -- 恶魔猎手 复仇
+	[104] = true, -- 德鲁伊 守护
+	[268] = true, -- 武僧 酒仙
+	[66]  = true, -- 圣骑士 防护
+	[73]  = true, -- 战士 防护
+}
+
+-- LFG 角色图标贴图与 TexCoord（从 BBP 扒的同款）
+local LFG_TEXTURE    = "interface/lfgframe/uilfgprompts"
+local HEAL_TEXCOORD  = { 0.015, 0.1077, 0.7684, 0.8606 } -- 绿色十字（圆形版）
+local TANK_TEXCOORD  = { 0.637, 0.742, 0.259, 0.365 }    -- 蓝色盾牌（圆形版）
 
 -- 专精图标缓存：GUID -> {specID = xxx, iconID = xxx}
 local SpecCache = {}
@@ -47,30 +73,30 @@ local function IsFriendlyUnit(unit)
 	return reaction and reaction >= 5
 end
 
--- 获取单位专精 icon（返回 iconID 或 nil）
+-- 获取单位专精信息（返回 specID, iconID 或 nil, nil）
 -- 策略：
 -- 1) 自己 → GetSpecializationInfo(GetSpecialization())
 -- 2) 同队队友 → GetInspectSpecialization(unit) 通常直接有值（队伍同步）
 -- 3) 其他友方玩家 → NotifyInspect 异步请求，等 INSPECT_READY 回填
-local function GetUnitSpecIcon(unit)
-	if not unit or not UnitIsPlayer(unit) then return nil end
+local function GetUnitSpecInfo(unit)
+	if not unit or not UnitIsPlayer(unit) then return nil, nil end
 
 	-- 自己
 	if UnitIsUnit(unit, "player") then
 		local currentSpec = GetSpecialization()
 		if currentSpec then
-			local _, _, _, iconID = GetSpecializationInfo(currentSpec)
-			return iconID
+			local specID, _, _, iconID = GetSpecializationInfo(currentSpec)
+			return specID, iconID
 		end
-		return nil
+		return nil, nil
 	end
 
 	local guid = UnitGUID(unit)
-	if not guid then return nil end
+	if not guid then return nil, nil end
 
 	-- 缓存命中
 	if SpecCache[guid] then
-		return SpecCache[guid].iconID
+		return SpecCache[guid].specID, SpecCache[guid].iconID
 	end
 
 	-- 查 InspectSpecialization（队友同步的数据，通常直接有）
@@ -79,7 +105,7 @@ local function GetUnitSpecIcon(unit)
 		local _, _, _, iconID = GetSpecializationInfoByID(specID)
 		if iconID then
 			SpecCache[guid] = { specID = specID, iconID = iconID }
-			return iconID
+			return specID, iconID
 		end
 	end
 
@@ -89,7 +115,7 @@ local function GetUnitSpecIcon(unit)
 		NotifyInspect(unit)
 	end
 
-	return nil
+	return nil, nil
 end
 
 -- 创建或获取图标框体（仿 BBP：icon + mask + border + highlightSelect）
@@ -216,14 +242,23 @@ local function HandleNamePlateAdded(unit)
 			return
 		end
 	elseif mode == 2 then
-		-- 专精图标：治疗/坦克/DPS 都显示各自专精 icon
-		local iconID = GetUnitSpecIcon(unit)
-		if iconID then
+		-- 角色图标：治疗=绿十字，坦克=蓝盾牌，DPS=专精图标
+		local specID, iconID = GetUnitSpecInfo(unit)
+		if specID and HEALER_SPECS[specID] then
+			-- 治疗：LFG 绿十字
+			icon.texture:SetTexture(LFG_TEXTURE)
+			icon.texture:SetTexCoord(HEAL_TEXCOORD[1], HEAL_TEXCOORD[2], HEAL_TEXCOORD[3], HEAL_TEXCOORD[4])
+		elseif specID and TANK_SPECS[specID] then
+			-- 坦克：LFG 蓝盾牌
+			icon.texture:SetTexture(LFG_TEXTURE)
+			icon.texture:SetTexCoord(TANK_TEXCOORD[1], TANK_TEXCOORD[2], TANK_TEXCOORD[3], TANK_TEXCOORD[4])
+		elseif iconID then
+			-- DPS：专精图标
 			icon.texture:SetTexture(iconID)
-			-- 专精图标是方形贴图，用扩展 TexCoord 消除边缘裁切（同职业图标）
+			-- 专精图标是方形贴图，用扩展 TexCoord 消除边缘裁切
 			icon.texture:SetTexCoord(-0.06, 1.05, -0.06, 1.05)
 		else
-			-- 专精未知：临时回退到职业图标（等 INSPECT_READY 再刷新成专精）
+			-- 专精未知：临时回退到职业图标（等 INSPECT_READY 再刷新）
 			local _, classFile = UnitClass(unit)
 			if classFile and CLASS_ICON_ATLAS[classFile] then
 				icon.texture:SetAtlas(CLASS_ICON_ATLAS[classFile])
