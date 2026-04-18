@@ -10,7 +10,7 @@ local _, ns = ...
 	- 用 SetAlpha(0) 隐藏血条（仿BBP的HideFriendlyHealthbar）
 ]]
 
--- friendlyIconMode: 0=不使用(显示名字), 1=职业图标, 2=角色图标
+-- friendlyIconMode: 0=不使用(显示名字), 1=职业图标, 2=专精图标（治疗/坦克/DPS都显示对应专精icon）
 
 local CLASS_ICON_ATLAS = {
 	["WARRIOR"] = "classicon-warrior",
@@ -28,6 +28,11 @@ local CLASS_ICON_ATLAS = {
 	["EVOKER"] = "classicon-evoker",
 }
 
+-- 专精图标缓存：GUID -> {specID = xxx, iconID = xxx}
+local SpecCache = {}
+-- 等待 INSPECT_READY 的单位列表：GUID -> unit
+local PendingInspect = {}
+
 -- BBP 风格尺寸（参考 BBP classIcon.lua 的 Circle 分支）
 local FRAME_SIZE    = 30   -- 外层 frame（= border SetAllPoints 的范围）
 local ICON_SIZE     = 26   -- 实际图标（略小于 frame，给 border 留出金边空间）
@@ -40,6 +45,51 @@ local function IsFriendlyUnit(unit)
 	if not unit then return false end
 	local reaction = UnitReaction(unit, "player")
 	return reaction and reaction >= 5
+end
+
+-- 获取单位专精 icon（返回 iconID 或 nil）
+-- 策略：
+-- 1) 自己 → GetSpecializationInfo(GetSpecialization())
+-- 2) 同队队友 → GetInspectSpecialization(unit) 通常直接有值（队伍同步）
+-- 3) 其他友方玩家 → NotifyInspect 异步请求，等 INSPECT_READY 回填
+local function GetUnitSpecIcon(unit)
+	if not unit or not UnitIsPlayer(unit) then return nil end
+
+	-- 自己
+	if UnitIsUnit(unit, "player") then
+		local currentSpec = GetSpecialization()
+		if currentSpec then
+			local _, _, _, iconID = GetSpecializationInfo(currentSpec)
+			return iconID
+		end
+		return nil
+	end
+
+	local guid = UnitGUID(unit)
+	if not guid then return nil end
+
+	-- 缓存命中
+	if SpecCache[guid] then
+		return SpecCache[guid].iconID
+	end
+
+	-- 查 InspectSpecialization（队友同步的数据，通常直接有）
+	local specID = GetInspectSpecialization(unit)
+	if specID and specID > 0 then
+		local _, _, _, iconID = GetSpecializationInfoByID(specID)
+		if iconID then
+			SpecCache[guid] = { specID = specID, iconID = iconID }
+			return iconID
+		end
+	end
+
+	-- 没查到：发起 inspect 请求，等 INSPECT_READY 回来后刷新
+	if CanInspect(unit) and not PendingInspect[guid] then
+		PendingInspect[guid] = unit
+		NotifyInspect(unit)
+	end
+
+	return nil
 end
 
 -- 创建或获取图标框体（仿 BBP：icon + mask + border + highlightSelect）
@@ -166,10 +216,23 @@ local function HandleNamePlateAdded(unit)
 			return
 		end
 	elseif mode == 2 then
-		-- 角色图标（2D 头像，用 SetPortraitTexture 比 PlayerModel 清晰得多）
-		SetPortraitTexture(icon.texture, unit)
-		-- 头像贴图坐标是 0~1 整图，不要用扩展 TexCoord，否则会裁掉人脸
-		icon.texture:SetTexCoord(0, 1, 0, 1)
+		-- 专精图标：治疗/坦克/DPS 都显示各自专精 icon
+		local iconID = GetUnitSpecIcon(unit)
+		if iconID then
+			icon.texture:SetTexture(iconID)
+			-- 专精图标是方形贴图，用扩展 TexCoord 消除边缘裁切（同职业图标）
+			icon.texture:SetTexCoord(-0.06, 1.05, -0.06, 1.05)
+		else
+			-- 专精未知：临时回退到职业图标（等 INSPECT_READY 再刷新成专精）
+			local _, classFile = UnitClass(unit)
+			if classFile and CLASS_ICON_ATLAS[classFile] then
+				icon.texture:SetAtlas(CLASS_ICON_ATLAS[classFile])
+				icon.texture:SetTexCoord(-0.06, 1.05, -0.06, 1.05)
+			else
+				icon:Hide()
+				return
+			end
+		end
 		icon:Show()
 	end
 
@@ -256,13 +319,44 @@ end
 eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 eventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-eventFrame:SetScript("OnEvent", function(self, event, unit)
+eventFrame:RegisterEvent("INSPECT_READY")
+eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+eventFrame:SetScript("OnEvent", function(self, event, arg1)
 	if event == "NAME_PLATE_UNIT_ADDED" then
-		HandleNamePlateAdded(unit)
+		HandleNamePlateAdded(arg1)
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
-		HandleNamePlateRemoved(unit)
+		HandleNamePlateRemoved(arg1)
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		UpdateAllTargetHighlights()
+	elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
+		-- arg1 是切换专精的 unit；清掉它的缓存，后续重新查询
+		if arg1 then
+			local guid = UnitGUID(arg1)
+			if guid then SpecCache[guid] = nil end
+		end
+	elseif event == "INSPECT_READY" then
+		-- arg1 是 GUID
+		local guid = arg1
+		if PendingInspect[guid] then
+			PendingInspect[guid] = nil
+			-- 查找当前所有姓名板匹配 GUID（unit token 可能已变）
+			for _, nameplate in ipairs(C_NamePlate.GetNamePlates()) do
+				local npFrame = nameplate.UnitFrame
+				if npFrame and not npFrame:IsForbidden() and npFrame.unit and UnitGUID(npFrame.unit) == guid then
+					-- 用当前实际 unit token 重新查专精
+					local specID = GetInspectSpecialization(npFrame.unit)
+					if specID and specID > 0 then
+						local _, _, _, iconID = GetSpecializationInfoByID(specID)
+						if iconID then
+							SpecCache[guid] = { specID = specID, iconID = iconID }
+						end
+					end
+					-- 重新走 Added 流程刷新图标
+					HandleNamePlateAdded(npFrame.unit)
+					break
+				end
+			end
+		end
 	end
 end)
 
