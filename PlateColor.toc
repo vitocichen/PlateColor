@@ -13,6 +13,7 @@ DB\XML.xml
 Locales\XML.xml
 Options\XML.xml
 Anchors.lua
+FriendlyIcon.lua
 BarColor.lua
 BarSlayline.lua
 BarTexture.lua

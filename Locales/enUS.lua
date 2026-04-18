@@ -55,6 +55,11 @@ ns.enUS = {
 ["友方NPC名字模式"] = "Friendly NPC Name Mode",
 ["友方名字模式尺寸"] = "Friendly Name Mode Size",
 ["友方玩家公会名称"] = "Friendly Player Guild Name",
+["友方玩家图标模式"] = "Friendly Player Icon Mode",
+["友方玩家图标模式鼠标提示"] = "Choose display mode for friendly player nameplates\nShow Name: Use default Blizzard name mode\nClass Icon: Show class icon instead of name\nPortrait: Show 3D portrait instead of name",
+["显示名字"] = "Show Name",
+["职业图标"] = "Class Icon",
+["角色图标"] = "Portrait",
 
 ["施法"] = "Cast Bar",
 ["施法条材质选择"] = "Cast Bar Texture Selection",
