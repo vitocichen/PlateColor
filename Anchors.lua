@@ -1,4 +1,4 @@
-﻿local _, ns = ...
+local _, ns = ...
 
 local SimplifiedTypes = {--简化姓名版包含友方玩家的选项转换为不包含友方玩家防止副本内不显示
 ["D"] = "",
@@ -47,13 +47,13 @@ function ns.SetPoints(self)
 	end
 	--边框和背景
 	if PlateColorDB.hpBorder then
-		self.HealthBarsContainer.healthBar.bgTexture:SetTexture("Interface\\Addons\\PlateColor\\texture\\bgTexture.png")
+		self.HealthBarsContainer.healthBar.bgTexture:SetTexture("Interface\\Addons\\PlateColor_My\\texture\\bgTexture.png")
 		self.HealthBarsContainer.healthBar.bgTexture:SetPoint("TOPLEFT", -1 , 1)
 		self.HealthBarsContainer.healthBar.bgTexture:SetPoint("BOTTOMRIGHT", 1 , -1)
-		self.HealthBarsContainer.healthBar.selectedBorder:SetTexture("Interface\\Addons\\PlateColor\\texture\\selectedBorder.png")
+		self.HealthBarsContainer.healthBar.selectedBorder:SetTexture("Interface\\Addons\\PlateColor_My\\texture\\selectedBorder.png")
 		self.HealthBarsContainer.healthBar.selectedBorder:SetPoint("TOPLEFT", -2, 1)
 		self.HealthBarsContainer.healthBar.selectedBorder:SetPoint("BOTTOMRIGHT", 2, -1)
-		self.HealthBarsContainer.healthBar.deselectedOverlay:SetTexture("Interface\\Addons\\PlateColor\\texture\\deselectedOverlay.png")
+		self.HealthBarsContainer.healthBar.deselectedOverlay:SetTexture("Interface\\Addons\\PlateColor_My\\texture\\deselectedOverlay.png")
 		self.HealthBarsContainer.healthBar.deselectedOverlay:SetPoint("TOPLEFT", -2, 1)
 		self.HealthBarsContainer.healthBar.deselectedOverlay:SetPoint("BOTTOMRIGHT", 2, -1)
 	else
@@ -71,7 +71,7 @@ function ns.SetPoints(self)
 
 	if not self.HitTestFrameShow then
 		self.HitTestFrameShow = self:CreateTexture(nil, "OVERLAY")
-		self.HitTestFrameShow:SetTexture("Interface\\Addons\\PlateColor\\texture\\HitTexture.png")
+		self.HitTestFrameShow:SetTexture("Interface\\Addons\\PlateColor_My\\texture\\HitTexture.png")
 		self.HitTestFrameShow:SetAlpha(0.8)
 	end
 	self.HitTestFrameShow:SetShown(PlateColorDB.HitTestShow)

@@ -8,7 +8,7 @@ function ns.CteatNameQuest(unitFrame)
 
 	if not unitFrame.NameQuest then
 		unitFrame.NameQuest = unitFrame:CreateTexture(nil, "OVERLAY")
-		unitFrame.NameQuest:SetTexture("Interface\\Addons\\PlateColor\\texture\\questicon")
+		unitFrame.NameQuest:SetTexture("Interface\\Addons\\PlateColor_My\\texture\\questicon")
 		unitFrame.NameQuest:SetSize(22,22)
 	end
 	

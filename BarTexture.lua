@@ -12,7 +12,7 @@ function ns.UpdateHpTexture(unitFrame)
 	end
 	if unitFrame.MouseoverTexture then
 		if PlateColorDB.hpBorder then
-			unitFrame.MouseoverTexture:SetTexture("Interface\\Addons\\PlateColor\\texture\\MouseoverTexture.png")
+			unitFrame.MouseoverTexture:SetTexture("Interface\\Addons\\PlateColor_My\\texture\\MouseoverTexture.png")
 		else
 			unitFrame.MouseoverTexture:SetAtlas("UI-HUD-Nameplates-Selected")
 		end
@@ -21,7 +21,7 @@ function ns.UpdateHpTexture(unitFrame)
 	--焦点材质
 	if not unitFrame.FocusTexture then
 		unitFrame.FocusTexture = unitFrame.healthBar:CreateTexture(nil, "OVERLAY")
-		unitFrame.FocusTexture:SetTexture("Interface\\Addons\\PlateColor\\texture\\FocusTexture.png")
+		unitFrame.FocusTexture:SetTexture("Interface\\Addons\\PlateColor_My\\texture\\FocusTexture.png")
 		unitFrame.FocusTexture:SetVertexColor(0, 0, 0, 1)
 		unitFrame.FocusTexture:SetAllPoints(unitFrame.healthBar)
 	end

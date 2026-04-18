@@ -144,29 +144,29 @@ end
 
 -- ========== 创建具体的链接按钮 ==========
 ---矢量图来源https://www.iconfont.cn/?spm=a313x.search_index.i3.d4d0a486a.70603a81WbKJak
-CreateLinkButton("Interface\\AddOns\\PlateColor\\texture\\Links\\curseforge.png", 
+CreateLinkButton("Interface\\AddOns\\PlateColor_My\\texture\\Links\\curseforge.png", 
 	"https://legacy.curseforge.com/wow/addons/platecolor")
 
-CreateLinkButton("Interface\\AddOns\\PlateColor\\texture\\Links\\github.png", 
+CreateLinkButton("Interface\\AddOns\\PlateColor_My\\texture\\Links\\github.png", 
 	"https://github.com/jianfan221/PlateColor")
 
 if GetLocale() == "zhCN" then
 
-    CreateLinkButton("Interface\\AddOns\\PlateColor\\texture\\Links\\nga.tga", 
+    CreateLinkButton("Interface\\AddOns\\PlateColor_My\\texture\\Links\\nga.tga", 
         "https://nga.178.com/read.php?tid=11477676")
 
-    CreateLinkButton("Interface\\AddOns\\PlateColor\\texture\\Links\\bilibili.png", 
+    CreateLinkButton("Interface\\AddOns\\PlateColor_My\\texture\\Links\\bilibili.png", 
         "https://space.bilibili.com/2260708")
 
-    CreateLinkButton("Interface\\AddOns\\PlateColor\\texture\\Links\\douyin.png", 
+    CreateLinkButton("Interface\\AddOns\\PlateColor_My\\texture\\Links\\douyin.png", 
         "https://www.douyin.com/user/MS4wLjABAAAA8A4MhoUW96o3IUSKRHr7hx_lR10we68TixlVo7G6I9E?from_tab_name=main&vid=7360987693624462644", 
-        "Interface\\AddOns\\PlateColor\\texture\\Links\\douyin2.png")
+        "Interface\\AddOns\\PlateColor_My\\texture\\Links\\douyin2.png")
 
-    CreateLinkButton("Interface\\AddOns\\PlateColor\\texture\\Links\\douyin3.png", 
-        "140237131398", "Interface\\AddOns\\PlateColor\\texture\\Links\\douyin4.png",1.3)
+    CreateLinkButton("Interface\\AddOns\\PlateColor_My\\texture\\Links\\douyin3.png", 
+        "140237131398", "Interface\\AddOns\\PlateColor_My\\texture\\Links\\douyin4.png",1.3)
 
-    CreateLinkButton("Interface\\AddOns\\PlateColor\\texture\\Links\\aifadian.png", 
-        "https://afdian.com/a/jianfan", "Interface\\AddOns\\PlateColor\\texture\\Links\\aifadian2.png",1.5)
+    CreateLinkButton("Interface\\AddOns\\PlateColor_My\\texture\\Links\\aifadian.png", 
+        "https://afdian.com/a/jianfan", "Interface\\AddOns\\PlateColor_My\\texture\\Links\\aifadian2.png",1.5)
 
 end
 
